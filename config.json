@@ -1,0 +1,38 @@
+{
+  "port": 8001,
+  "baseUrl": "http://localhost:8001",
+  "mountPath": "/",
+  "session": {
+    "secret": "@@RANDOM_SESSION_SECRET@@",
+    "resave": false,
+    "saveUninitialized": true,
+    "cookie": {"secure": true, "maxAge": 604800}
+  },
+  "auth": {
+    "@@AUTH_PROVIDER_NAME@@": {
+      "oauth2": {
+        "clientId": "@@OAUTH2_CLIENT_ID@@",
+        "clientSecret": "@@OAUTH2_CLIENT_SECRET@@",
+        "accessTokenUri": "@@OAUTH2_ACCESS_TOKEN_URI@@",
+        "authorizationUri": "@@OAUTH2_AUTHORIZATION_URI@@",
+        "redirectUri": "@@OAUTH2_CALLBACK_URI@@",
+        "scopes": ["codecast"]
+      },
+      "identityProviderUri": "@@IDENTITY_PROVIDER_URI@@",
+      "logoutUri": "@@LOGOUT_URI@@"
+    }
+  },
+  "configs": {
+    "base": {
+      "s3AccessKeyId": "@@ACCESS_KEY_ID@@",
+      "s3SecretAccessKey": "@@SECRET_ACCESS_KEY@@",
+      "s3Region": "@@REGION@@",
+      "s3Bucket": "@@BUCKET@@"
+    }
+  },
+  "tokens": {
+    "default": [
+      "base", {"uploadPath": "uploads"}
+    ]
+  }
+}
