@@ -37,7 +37,7 @@ const {store, scope, actionTypes, views, finalize, start} = link(function (bundl
 
   if (process.env.NODE_ENV === 'development') {
     bundle.addEarlyReducer(function (state, action) {
-      console.log('action', action);
+      // console.log('action', action);
       return state;
     });
   }
