@@ -1,4 +1,5 @@
 import React from 'react';
+import Slider from 'rc-slider';
 import * as C from 'persistent-c';
 import { getNumber, readValue } from './utils';
 import { enumerateHeapBlocks } from '../heap';
@@ -13,10 +14,11 @@ const types = {
 class MemoryGraph extends React.PureComponent {
 
 	render() {
-		const { localMap, directive, context, centerAddress, startAddress, maxAddress, nBytesShown } = this.props;
+		const { Frame, localMap, directive, context, centerAddress, startAddress, maxAddress, nBytesShown, widthFactor } = this.props;
     const { memory, globalMap } = context.core;
 		let { scope } = context.core;
     let variables = {};
+    let pointers = {};
 
 	  while (scope && scope.limit <= maxAddress + 1) {
 	    const {limit, kind} = scope;
@@ -24,7 +26,7 @@ class MemoryGraph extends React.PureComponent {
         const {name, ref} = scope;
         const variable = unpack(context, name, ref, startAddress, maxAddress);
         if (variable.type.kind == types.POINTER) {
-          variables[variable.address] = variable;
+          pointers[variable.address] = variable;
         } else {
           variables[ref.address] = variable;
         }
@@ -34,12 +36,11 @@ class MemoryGraph extends React.PureComponent {
 	  }
 
     for (let block of enumerateHeapBlocks(context.core)) {
-      if (variables.hasOwnProperty(block.start) && block.free) {
-        variables[block.start].free = block.free;
+      if (pointers.hasOwnProperty(block.start) && block.free) {
+        pointers[block.start].free = block.free;
       }
     }
 
-    console.log(variables);
     for (let entry of context.core.memoryLog) {
       // console.log(entry);
       const operation = entry[0];
@@ -50,34 +51,110 @@ class MemoryGraph extends React.PureComponent {
       }
     }
 
+    let offset = 20;
+    const height = Object.keys(pointers).length * 400;
 		return (
-			<div>Hello World!
-				<Graph variables={variables}/>
+      <Frame {...this.props}>
+        <div className="memory-controls directive-controls">
+          <div className="memory-slider-container" style={{width: `${Math.round(400 * widthFactor)}px`}}>
+            <Slider prefixCls="memory-slider" tipFormatter={null} value={centerAddress} min={0} max={maxAddress} onChange={this.onSeek}>
+              <div className="memory-slider-background"/>
+            </Slider>
+          </div>
+          </div>
+			<div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: height, overflow: `scroll-y`}}>
+        <svg width="100%" height="100%" aria-labelledby="title desc">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" fill="black" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" />
+            </marker>
+          </defs>
+          {
+            Object.keys(pointers).map((key, index) => {
+              const y = offset + (30 * index);
+              offset += getSizeOf(pointers[key]) * 80;
+
+              return (
+                <svg y={y} key={index}>
+                  <Variable key={index} variable={pointers[key]} />
+                </svg>
+              )
+            })
+          }
+        </svg>
 			</div>
+      </Frame>
 		);
 	}
+
+  onSeek = (centerAddress) => {
+    // Clear nibbles 0 and 1.
+    centerAddress = centerAddress ^ (centerAddress & 0xFF);
+    // Copy nibble 2 into nibble 1 (0xAB00 → 0xABB0)
+    centerAddress |= 0xF0 & (centerAddress >> 4);
+    this.props.onChange(this.props.directive, {centerAddress});
+  };
 }
 
-function Graph({variables}) {
-  return (
-    <div>
-      {
-        Object.keys(variables).map((key, index) => (
-          <Variable key={index} variable={variables[key]}/>
-        ))
-      }
-    </div>
-  )
-}
-
-function Variable({variable}) {
+function Variable({variable, index, startAddress}) {
   const isFreed = (variable.free) ? "Free'd" : "Allocated";
+
+  let content = "";
+
+  if (variable.fields) {
+    content = variable.fields.map((field, i) => (<Field key={i} field={field} index={i}/>))
+  } else {
+    content = (<Content content={variable.address}/>)
+  }
+
   return (
-    <div>
-      {variable.name}: {isFreed}
-    </div>
+    <g fill="white">
+      <text y="10" x="20%" fontSize='12px' fontWeight='bold' fill='grey'>
+        {variable.type.type.name}
+      </text>
+      {content}
+    </g>
+  );
+  // <line x1={arrow_x1} y1="30" x2={arrow_x2} y2="30" stroke="black" markerEnd="url(#arrow)"/>
+}
+
+function Content({content}) {
+  return (
+    <g>
+      <rect y="10" x="30%" width="60" height="80" stroke="blue"></rect>
+      <text y="20" x="30%" fontSize='12px' fontWeight='bold' fill='crimson'>
+        {content}
+      </text>
+    </g>
   )
 }
+
+function Field({field, index}) {
+  const y = index * 80;
+  const fieldNameY = y + 15;
+  const contentY = y + 30;
+
+  return (
+    <g>
+      <rect y={y} x="30%" width="60" height="80" stroke="blue"></rect>
+      <text y={fieldNameY} x="30%" fontSize='12px' fontWeight='bold' fill='crimson'>
+        {field.name}
+      </text>
+      <text y={contentY} x="30%" dominantBaseline="middle" fontSize='15px' fill='black'>
+        {field.address}
+      </text>
+    </g>
+  );
+}
+
+function getSizeOf(pointer) {
+  if (pointer.fields) {
+    return pointer.fields.length;
+  }
+
+  return 1;
+}
+
 
 function clipCenterAddress ({nBytesShown, context}, address) {
   //address -= nBytesShown / 2;
@@ -186,6 +263,7 @@ function MemoryGraphSelector ({scale, directive, context, controls, frames}) {
   const localMap = frames[0].get('localMap');
 	const {byName, byPos} = directive;
 	const nBytesShown = getNumber(byName.bytes, 32);
+  const widthFactor = getNumber(byName.width, 1);
 	const maxAddress  = context.core.memory.size - 1;
 
   let centerAddress = controls.get('centerAddress');
@@ -200,7 +278,7 @@ function MemoryGraphSelector ({scale, directive, context, controls, frames}) {
   const startAddress = centerAddress - nBytesShown / 2;
 
   return {
-		localMap, directive, context, centerAddress, startAddress, maxAddress, nBytesShown
+		localMap, directive, context, controls, centerAddress, startAddress, maxAddress, nBytesShown, widthFactor
 	}
 }
 
