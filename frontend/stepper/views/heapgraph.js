@@ -1,5 +1,5 @@
 import React from 'react';
-import Slider from 'rc-slider';
+import classnames from 'classnames';
 import * as C from 'persistent-c';
 import { getNumber, readValue } from './utils';
 import { enumerateHeapBlocks } from '../heap';
@@ -11,24 +11,28 @@ const types = {
   RECORD: "record"
 };
 
-class MemoryGraph extends React.PureComponent {
+class HeapGraph extends React.PureComponent {
+  render() {
+    const { state, updateMemoryContent, startAddress, maxAddress } = this.props;
+    const { core, oldCore, memoryContents } = state;
 
-	render() {
-		const { Frame, localMap, directive, context, centerAddress, startAddress, maxAddress, nBytesShown, widthFactor } = this.props;
-    const { memory, globalMap } = context.core;
-		let { scope } = context.core;
+    const context = {core, oldCore};
+    let { scope } = state.core;
+
     let variables = {};
-    let pointers = {};
+    let memory    = memoryContents;
+    let pointers  = {};
 
 	  while (scope && scope.limit <= maxAddress + 1) {
 	    const {limit, kind} = scope;
       if (kind == "variable") {
         const {name, ref} = scope;
-        const variable = unpack(context, name, ref, startAddress, maxAddress);
-        if (variable.type.kind == types.POINTER) {
-          pointers[variable.address] = variable;
+        const {block, addr} = unpack(context, name, ref, startAddress, maxAddress);
+        if (block.type.kind == types.POINTER) {
+          pointers[block.address] = block;
+          Object.assign(memory.addresses, addr);
         } else {
-          variables[ref.address] = variable;
+          variables[ref.address] = block;
         }
       }
 
@@ -36,33 +40,33 @@ class MemoryGraph extends React.PureComponent {
 	  }
 
     for (let block of enumerateHeapBlocks(context.core)) {
-      if (pointers.hasOwnProperty(block.start) && block.free) {
-        pointers[block.start].free = block.free;
+      if (pointers.hasOwnProperty(block.start)) {
+        memory.contents[block.start] = pointers[block.start];
       }
     }
+
+    pointers = {};
+
+    updateMemoryContent(memory);
 
     for (let entry of context.core.memoryLog) {
-      // console.log(entry);
-      const operation = entry[0];
-      if (operation == "store") {
-
-        //entry[1].constructor.name);
-        //console.log(entry[2].constructor.name);
+      const op = entry[0];
+      if (op == "store") {
+        const source = entry[1];
+        const target = entry[2];
+        if (memory.addresses.hasOwnProperty(source.address)) {
+          memory.connections[source.address] = target.address;
+        }
       }
     }
 
+    console.log(memory);
+
     let offset = 20;
-    const height = Object.keys(pointers).length * 400;
-		return (
-      <Frame {...this.props}>
-        <div className="memory-controls directive-controls">
-          <div className="memory-slider-container" style={{width: `${Math.round(400 * widthFactor)}px`}}>
-            <Slider prefixCls="memory-slider" tipFormatter={null} value={centerAddress} min={0} max={maxAddress} onChange={this.onSeek}>
-              <div className="memory-slider-background"/>
-            </Slider>
-          </div>
-          </div>
-			<div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: height, overflow: `scroll-y`}}>
+    const height = Object.keys(memory.contents).length * 400;
+
+    return (
+      <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: height, overflow: `scroll-y`}}>
         <svg width="100%" height="100%" aria-labelledby="title desc">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" fill="black" orient="auto-start-reverse">
@@ -70,30 +74,21 @@ class MemoryGraph extends React.PureComponent {
             </marker>
           </defs>
           {
-            Object.keys(pointers).map((key, index) => {
+            Object.keys(memory.contents).map((key, index) => {
               const y = offset + (30 * index);
-              offset += getSizeOf(pointers[key]) * 80;
+              offset += getSizeOf(memory.contents[key]) * 80;
 
               return (
                 <svg y={y} key={index}>
-                  <Variable key={index} variable={pointers[key]} />
+                  <Variable key={index} variable={memory.contents[key]} />
                 </svg>
               )
             })
           }
         </svg>
 			</div>
-      </Frame>
-		);
-	}
-
-  onSeek = (centerAddress) => {
-    // Clear nibbles 0 and 1.
-    centerAddress = centerAddress ^ (centerAddress & 0xFF);
-    // Copy nibble 2 into nibble 1 (0xAB00 → 0xABB0)
-    centerAddress |= 0xF0 & (centerAddress >> 4);
-    this.props.onChange(this.props.directive, {centerAddress});
-  };
+    )
+  }
 }
 
 function Variable({variable, index, startAddress}) {
@@ -155,15 +150,6 @@ function getSizeOf(pointer) {
   return 1;
 }
 
-
-function clipCenterAddress ({nBytesShown, context}, address) {
-  //address -= nBytesShown / 2;
-  address = Math.max(0, address);
-  address = Math.min(context.core.memory.size - 1, address);
-  //address += nBytesShown / 2;
-  return address;
-}
-
 function unpack(context, name, ref, startAddress, endAddress) {
   const {core, oldCore} = context;
   const type = ref.type.pointee.kind;
@@ -181,7 +167,11 @@ function unpack(context, name, ref, startAddress, endAddress) {
     return;
   }
 
-  const value = readValue(context, refType, ref.address);
+  const value = (refType.pointee.repr == "void")
+              ? {}
+              : readValue(context, refType, ref.address);
+
+  let addr = {};
 
   let block = {
     name: name,
@@ -210,34 +200,11 @@ function unpack(context, name, ref, startAddress, endAddress) {
       type: getType(field.content.current.type),
       address: address
     });
+
+    addr[address] = block.address;
   }
 
-  return block;
-}
-
-/**
- * Converts a number to another base and returns it as a string.
- *
- * @param  {(Number|String)} number   The number to convert.
- * @param  {Number}          base     The base to convert to (default = 10).
- * @param  {Object}          options  Additional options (optional).
- * @return {String} The number converted to the specified base as a string.
- */
-function convertBase(number, base = 10, options = {}) {
-  // A stringified number (i.e. "22" is a number in JS)
-  if (isNaN(number)) return 0;
-
-  number = (typeof(number) == "string")
-         ? parseInt(number).toString(base)
-         : number.toString(base);
-
-  if (options.padding) {
-    for (let i = number.length; i < options.padding.width; i++) {
-      number = options.padding.content + number;
-    }
-  }
-
-  return number;
+  return { block, addr };
 }
 
 function getType(type) {
@@ -259,27 +226,4 @@ function getType(type) {
   }
 }
 
-function MemoryGraphSelector ({scale, directive, context, controls, frames}) {
-  const localMap = frames[0].get('localMap');
-	const {byName, byPos} = directive;
-	const nBytesShown = getNumber(byName.bytes, 32);
-  const widthFactor = getNumber(byName.width, 1);
-	const maxAddress  = context.core.memory.size - 1;
-
-  let centerAddress = controls.get('centerAddress');
-
-  if (centerAddress === undefined) {
-    centerAddress = clipCenterAddress(
-      {nBytesShown, context},
-      getNumber(byName.start, nBytesShown / 2)
-    );
-  }
-
-  const startAddress = centerAddress - nBytesShown / 2;
-
-  return {
-		localMap, directive, context, controls, centerAddress, startAddress, maxAddress, nBytesShown, widthFactor
-	}
-}
-
-export default {View: MemoryGraph, selector: MemoryGraphSelector};
+export default HeapGraph;

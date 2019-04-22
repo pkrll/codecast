@@ -10,15 +10,13 @@ import {Array1D} from './array1d';
 import {Array2D} from './array2d';
 import {SortView} from './sort';
 import MemoryViewDirective from './memory';
-import MemoryGraphDirective from './memorygraph';
 
 const directiveViewDict = {
   showVar: {View: ShowVar, selector: obj => obj},
   showArray: {View: Array1D, selector: obj => obj},
   showArray2D: {View: Array2D, selector: obj => obj},
   showSort: {View: SortView, selector: obj => obj},
-  showMemory: MemoryViewDirective,
-  showGraph: MemoryGraphDirective,
+  showMemory: MemoryViewDirective
 };
 
 export default function (bundle, deps) {

@@ -8,7 +8,7 @@ class StepperView extends React.PureComponent {
     const {
       diagnostics, readOnly, sourceMode, sourceRowHeight,
       preventInput, haveStepper, error, getMessage, geometry, panes,
-      StackView, BufferEditor, ArduinoPanel, DirectivesPane, IOPane, windowHeight
+      StackView, BufferEditor, ArduinoPanel, DirectivesPane, IOPane, windowHeight, MemoryMap
     } = this.props;
     const height = `${windowHeight - this.state.top - 10}px`;
     const sourcePanelHeader = (
@@ -105,6 +105,7 @@ class StepperView extends React.PureComponent {
               <div className="col-sm-12">
                 {DirectivesPane && <DirectivesPane scale={geometry.svgScale}/>}
                 {IOPane && <IOPane preventInput={preventInput}/>}
+                <MemoryMap/>
               </div>
             </div>
           </div>
@@ -156,7 +157,7 @@ class StepperViewPanes extends React.PureComponent {
 
 function StepperViewSelector (state, props) {
   const {getPlayerState, getTranslateDiagnostics, getStepperDisplay} = state.get('scope');
-  const {BufferEditor, StackView, ArduinoPanel, DirectivesPane, IOPane} = state.get('views');
+  const {BufferEditor, StackView, ArduinoPanel, DirectivesPane, IOPane, MemoryMap} = state.get('views');
   const {translateClearDiagnostics, stepperExit} = state.get('actionTypes');
   const getMessage = state.get('getMessage');
   const geometry = state.get('mainViewGeometry');
@@ -186,7 +187,9 @@ function StepperViewSelector (state, props) {
     ArduinoPanel: arduinoEnabled && ArduinoPanel,
     DirectivesPane: showViews && DirectivesPane,
     IOPane: showIO && IOPane,
-    windowHeight
+    MemoryMap: MemoryMap,
+    windowHeight,
+
   };
 }
 
