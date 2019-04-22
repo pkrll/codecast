@@ -13,60 +13,15 @@ const types = {
 
 class HeapGraph extends React.PureComponent {
   render() {
-    const { state, updateMemoryContent, startAddress, maxAddress } = this.props;
-    const { core, oldCore, memoryContents } = state;
-
-    const context = {core, oldCore};
-    let { scope } = state.core;
-
-    let variables = {};
-    let memory    = memoryContents;
-    let pointers  = {};
-
-	  while (scope && scope.limit <= maxAddress + 1) {
-	    const {limit, kind} = scope;
-      if (kind == "variable") {
-        const {name, ref} = scope;
-        const {block, addr} = unpack(context, name, ref, startAddress, maxAddress);
-        if (block.type.kind == types.POINTER) {
-          pointers[block.address] = block;
-          Object.assign(memory.addresses, addr);
-        } else {
-          variables[ref.address] = block;
-        }
-      }
-
-	    scope = scope.parent;
-	  }
-
-    for (let block of enumerateHeapBlocks(context.core)) {
-      if (pointers.hasOwnProperty(block.start)) {
-        memory.contents[block.start] = pointers[block.start];
-      }
-    }
-
-    pointers = {};
-
-    updateMemoryContent(memory);
-
-    for (let entry of context.core.memoryLog) {
-      const op = entry[0];
-      if (op == "store") {
-        const source = entry[1];
-        const target = entry[2];
-        if (memory.addresses.hasOwnProperty(source.address)) {
-          memory.connections[source.address] = target.address;
-        }
-      }
-    }
-
-    console.log(memory);
+    const { context, startAddress, maxAddress } = this.props;
+    const { memoryContents } = context;
+    const {memory, lastAddress} = mapMemory(context, memoryContents, startAddress, maxAddress);
 
     let offset = 20;
-    const height = Object.keys(memory.contents).length * 400;
+    const height = lastAddress * 16;
 
     return (
-      <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: height, overflow: `scroll-y`}}>
+      <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: height}}>
         <svg width="100%" height="100%" aria-labelledby="title desc">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" fill="black" orient="auto-start-reverse">
@@ -150,8 +105,58 @@ function getSizeOf(pointer) {
   return 1;
 }
 
+function mapMemory(context, memory, startAddress, maxAddress) {
+  const { core, oldCore } = context;
+  let { scope } = context.core;
+
+  let variables = {};
+  let pointers  = {};
+
+  while (scope && scope.limit <= maxAddress + 1) {
+    const {limit, kind} = scope;
+    if (kind == "variable") {
+      const {name, ref} = scope;
+      const {block, addr} = unpack(context, name, ref, startAddress, maxAddress);
+      if (block.type.kind == types.POINTER) {
+        pointers[block.address] = block;
+        Object.assign(memory.addresses, addr);
+      } else {
+        variables[ref.address] = block;
+      }
+    }
+
+    scope = scope.parent;
+  }
+
+  let lastAddress = core.heapStart;
+
+  for (let block of enumerateHeapBlocks(core)) {
+    if (pointers.hasOwnProperty(block.start)) {
+      memory.contents[block.start] = pointers[block.start];
+    } else if (block.free) {
+      lastAddress = block.ref.address;
+    }
+  }
+
+  lastAddress -= core.heapStart;
+  pointers = {};
+
+  for (let entry of core.memoryLog) {
+    const op = entry[0];
+    if (op == "store") {
+      const source = entry[1];
+      const target = entry[2];
+      if (memory.addresses.hasOwnProperty(source.address)) {
+        memory.connections[source.address] = target.address;
+      }
+    }
+  }
+
+  return {memory, lastAddress};
+}
+
 function unpack(context, name, ref, startAddress, endAddress) {
-  const {core, oldCore} = context;
+  const { core } = context;
   const type = ref.type.pointee.kind;
   let refType;
 

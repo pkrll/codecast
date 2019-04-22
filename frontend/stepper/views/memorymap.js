@@ -1,6 +1,6 @@
 import React from 'react';
-import classnames from 'classnames';
 import HeapGraph from './heapgraph';
+import classnames from 'classnames';
 
 export default function (bundle, deps) {
 
@@ -24,18 +24,20 @@ export default function (bundle, deps) {
       const { state } = this.props;
       if (!state) return false;
 
-      const maxAddress   = state.core.memory.size - 1;
+      const { core, oldCore, memoryContents } = state;
+
+      const context      = { core, oldCore, memoryContents };
+      const maxAddress   = core.memory.size - 1;
       const startAddress = 0;
 
       return (
         <div>
-          <HeapGraph state={state} updateMemoryContent={this.updateMemoryContent} startAddress={startAddress} maxAddress={maxAddress}/>
+          <HeapGraph context={context} startAddress={startAddress} maxAddress={maxAddress}/>
         </div>
       );
     };
 
   });
-
 };
 
 function memoryChanged(state, action) {
