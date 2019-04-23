@@ -45,16 +45,16 @@ function memoryChanged(state, action) {
   return state.updateIn(['stepper', 'current'], function(stepperState) {
     let { memoryContents } = stepperState;
 
-    Object.keys(payload.contents).map((key, index) => {
-      memoryContents.contents[key] = payload.contents[key];
+    Object.keys(payload.blocks).map((key, index) => {
+      memoryContents.blocks[key] = payload.blocks[key];
     });
 
-    Object.keys(payload.addresses).map((key, index) => {
-      memoryContents.addresses[key] = payload.addresses[key];
+    Object.keys(payload.fields).map((key, index) => {
+      memoryContents.fields[key] = payload.fields[key];
     });
 
-    Object.keys(payload.connections).map((key, index) => {
-      memoryContents.connections[key] = payload.connections[key];
+    Object.keys(payload.values).map((key, index) => {
+      memoryContents.values[key] = payload.values[key];
     });
 
     stepperState.memoryContents = memoryContents;
