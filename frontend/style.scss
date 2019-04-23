@@ -868,3 +868,16 @@ strong.highlight {
 button.btn-cc {
   width: 30px;
 }
+
+/* MemoryContent css */
+
+.pointerArrow:hover {
+  stroke: red;
+  cursor: pointer;
+}
+
+path {
+    fill: none;
+    stroke: black;
+    stroke-width: 2px;
+}
