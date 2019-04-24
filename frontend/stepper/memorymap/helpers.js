@@ -1,12 +1,33 @@
 import { MemoryContent, Types } from './memorycontent';
 import { enumerateHeapBlocks } from '../heap';
+import * as C from 'persistent-c';
 
 export const Dimensions = {
   HEIGHT: 20,
   WIDTH: 60,
   X: 100
 };
+/**
+ * Determines whether the given pointer is a string.
+ *
+ * @param  {Object}  value The pointer.
+ * @return {Boolean}       True if it is a string.
+ */
+export function isString(value) {
+  if (value && value.type.kind == "pointer") {
+    const pointer = value.type.pointee;
 
+    return (pointer.kind == "builtin" && pointer.repr == "char");
+  }
+
+  return false;
+}
+/**
+ * Returns the value of a ValueType or PointerType type.
+ *
+ * @param  {Object} data The
+ * @return {[type]}      [description]
+ */
 export function getValueOf(data) {
   if (data !== undefined) {
     const type = data.constructor.name;
@@ -16,16 +37,36 @@ export function getValueOf(data) {
 
   return randomString(7);
 }
-
+/**
+ * Generates a random string of specified length.
+ * @param  {Int}    length The number of characters.
+ * @return {String}        A random string.
+ */
 export function randomString(length) {
   return (Math.random() + 1).toString(36).substring(length);
 }
-
+/**
+ * A ValueType represents a value type data type, such as
+ * integers or chars.
+ *
+ * Strings are treated as value types here.
+ *
+ * @param       {Int} source The source memory address.
+ * @param       {Any} value  The value.
+ * @constructor
+ */
 export function ValueType(source, value) {
   this.source = source;
   this.value = value;
 }
-
+/**
+ * A PointerType represents a reference type data type.
+ *
+ *
+ * @param       {Int} source The source memory address.
+ * @param       {Int} target The target memory address.
+ * @constructor
+ */
 export function PointerType(source, target) {
   this.source = source;
   this.target = target;
@@ -62,7 +103,6 @@ export function mapMemory(context, startAddress, maxAddress) {
     scope = scope.parent;
   }
 
-  let lastAddress = context.core.heapStart;
   let allocatedBlocks = {};
   // Collects information on allocated blocks, used below for
   // building a representation of the memory contents.
@@ -79,11 +119,13 @@ export function mapMemory(context, startAddress, maxAddress) {
         memoryContents.blocks[block.start].free = block.free;
       }
 
-      lastAddress = block.ref.address;
+      if (block.start > memoryContents.endAddress) {
+        memoryContents.endAddress = block.start;
+      }
     }
   }
 
-  lastAddress -= context.core.heapStart;
+  memoryContents.endAddress -= context.core.heapStart;
   // Every memory event is recorded in the memory log. By mapping every
   // "store" operation to an allocated block, we can find information
   // on every allocation made.
@@ -105,11 +147,21 @@ export function mapMemory(context, startAddress, maxAddress) {
         if (type == "IntegralValue") {
           memoryContents.values[source.address] = new ValueType(source.address, value.number);
         } else {
-          memoryContents.values[source.address] = new PointerType(source.address, value.address);
+          let ref = undefined;
+          // Strings are handled as ValueType types, instead of pointers. This
+          // makes it a lot easier to display the string in the memory representation.
+          if (isString(value)) {
+            const string = C.readString(context.core.memory, value);
+            ref = new ValueType(source.address, string);
+          } else {
+            ref = new PointerType(source.address, value.address);
+          }
+
+          memoryContents.values[source.address] = ref;
         }
       }
     }
   }
 
-  return { memory: memoryContents, lastAddress };
+  return { memory: memoryContents };
 }

@@ -81,19 +81,19 @@ function memoryChanged(state, action) {
 	return state.updateIn(['stepper', 'current'], function(stepperState) {
 		let { memoryContents } = stepperState;
 
-		Object.keys(payload.blocks).map((key, _) => {
-			memoryContents.blocks[key] = payload.blocks[key];
-		});
+		// Object.keys(payload.blocks).map((key, _) => {
+		// 	memoryContents.blocks[key] = payload.blocks[key];
+		// });
+    //
+		// Object.keys(payload.fields).map((key, _) => {
+		// 	memoryContents.fields[key] = payload.fields[key];
+		// });
+    //
+		// Object.keys(payload.values).map((key, _) => {
+		// 	memoryContents.values[key] = payload.values[key];
+		// });
 
-		Object.keys(payload.fields).map((key, _) => {
-			memoryContents.fields[key] = payload.fields[key];
-		});
-
-		Object.keys(payload.values).map((key, _) => {
-			memoryContents.values[key] = payload.values[key];
-		});
-
-		stepperState.memoryContents = memoryContents;
+		stepperState.memoryContents = payload;
 
 		return stepperState;
 	});

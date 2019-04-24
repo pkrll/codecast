@@ -9,7 +9,19 @@ export const Types = {
 };
 
 /**
- * Generates a new MemoryContent type.
+ * Represents a data type allocated on the heap.
+ *
+ * The MemoryContent type consists of the properties:
+ *
+ *     - type:           The data type.
+ *     - size:           The size of the block in bytes.
+ *     - free:           A boolean indicating whether the block is free'd or not.
+ *     - address:        The start address of the block.
+ *     - end:            The end address of the block.
+ *     - fields:         A collection of all associated fields.
+ *     - fieldAddresses: Addresses to all the fields.
+ *
+ * The fields represents either a struct's fields, or an array's slots.
  *
  * @param       {Object} context [description]
  * @param       {Object} ref     [description]

@@ -11,10 +11,10 @@ import './../../../style.scss';
 class DetailedGraph extends React.PureComponent {
   render() {
     const { context, startAddress, maxAddress } = this.props;
-    const { memory, lastAddress } = mapMemory(context, startAddress, maxAddress);
+    const { memory } = mapMemory(context, startAddress, maxAddress);
 
     let offset = 20;
-    const height = lastAddress * Dimensions.HEIGHT + 100;
+    const height = memory.endAddress * Dimensions.HEIGHT + 100;
 
     const heapStart = context.core.heapStart;
 
@@ -31,7 +31,7 @@ class DetailedGraph extends React.PureComponent {
 
               return (
                 <svg y={y} key={index}>
-                  <Block key={index} variable={content} memory={memory} />
+                  <Block key={index} block={content} memory={memory} />
                 </svg>
               )
             })
@@ -48,10 +48,9 @@ class DetailedGraph extends React.PureComponent {
             })
           }
         </svg>
-			</div>
+      </div>
     )
   }
 }
-
 
 export default DetailedGraph;

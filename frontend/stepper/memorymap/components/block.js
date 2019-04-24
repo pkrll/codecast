@@ -1,15 +1,19 @@
 import React from 'react';
-import { getValueOf, Dimensions } from '../helpers';
+import { getType, getValueOf, Dimensions } from '../helpers';
 
-class Block extends React.PureComponent {
+class Block extends React.Component {
+  shouldComponentUpdate(nextProps) {
+    return true;
+  }
+
   render() {
-    const { memory, variable } = this.props;
-    const isFreed = (variable.free) ? "Free'd" : "Allocated";
+    const { memory, block } = this.props;
 
     let content = [];
     let previousSize = 0;
-    if (variable.fields) {
-      content = variable.fields.map((field, i) => {
+
+    if (block.fields) {
+      content = block.fields.map((field, i) => {
         const offsetTop = previousSize;
         previousSize += field.size * Dimensions.HEIGHT;
         return (<Field key={i} field={field} offsetTop={offsetTop} memory={memory} />)
@@ -19,9 +23,9 @@ class Block extends React.PureComponent {
     }
 
     return (
-      <g fill="white">
-        <text y={previousSize + 10} x={Dimensions.X} fontSize='12px' fontWeight='bold' fill='grey'>
-          {variable.type.name}
+      <g fill="white" opacity={block.free ? '0.5': '1'}>
+        <text y={previousSize + 15} x={Dimensions.X} fontSize='12px' fontWeight='bold' fill='grey'>
+          {block.type.name}
         </text>
         {content}
       </g>

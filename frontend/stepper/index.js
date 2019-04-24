@@ -695,7 +695,7 @@ function postLink (scope, actionTypes) {
       memorySize: 0x10000,
       stackSize: 4096,
     };
-    stepperState.memoryContents = stepperState.memoryContents || { blocks: {}, fields: {}, values: {}};
+    stepperState.memoryContents = stepperState.memoryContents || { blocks: {}, fields: {}, values: {}, endAddress: 0 };
     /* Set up the core. */
     const core0 = stepperState.oldCore = C.makeCore(options.memorySize);
     /* Execute declarations and copy strings into memory */
