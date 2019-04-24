@@ -2,7 +2,7 @@
 import MainBundle from './main';
 import StackBundle from './stack';
 import DirectivesBundle from './directives';
-import MemoryMapBundle from './memorymap';
+import MemoryMapBundle from '../memorymap';
 
 export default function (bundle) {
   bundle.include(MainBundle);

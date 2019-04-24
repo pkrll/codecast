@@ -16,7 +16,8 @@ const directiveViewDict = {
   showArray: {View: Array1D, selector: obj => obj},
   showArray2D: {View: Array2D, selector: obj => obj},
   showSort: {View: SortView, selector: obj => obj},
-  showMemory: MemoryViewDirective
+  showMemory: MemoryViewDirective,
+  showGraph: ''
 };
 
 export default function (bundle, deps) {
@@ -95,7 +96,7 @@ class DirectiveButton extends React.PureComponent {
 function DirectivePanel ({scale, directive, controls, context, frames, getMessage, onChange}) {
   const {key, kind} = directive;
   const hide = controls.get('hide', false);
-  if (hide) {
+  if (hide || directiveViewDict[kind] == '') {
     return false;
   }
   if (directive[0] === 'error') {

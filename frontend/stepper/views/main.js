@@ -104,8 +104,8 @@ class StepperView extends React.PureComponent {
             <div className="row">
               <div className="col-sm-12">
                 {DirectivesPane && <DirectivesPane scale={geometry.svgScale}/>}
-                {IOPane && <IOPane preventInput={preventInput}/>}
                 <MemoryMap/>
+                {IOPane && <IOPane preventInput={preventInput}/>}
               </div>
             </div>
           </div>

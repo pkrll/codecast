@@ -1,5 +1,5 @@
 import * as C from 'persistent-c';
-import { getNumber, readValue } from './views/utils';
+import { readValue } from '../views/utils';
 
 export const Types = {
   BUILTIN: "builtin",
@@ -7,25 +7,6 @@ export const Types = {
   SCALAR: "scalar",
   RECORD: "record"
 };
-
-function getType(type) {
-  switch (type.kind) {
-    case Types.POINTER:
-      return {kind: type.kind, type: getType(type.pointee)};
-      break;
-    case Types.BUILTIN:
-      return {kind: Types.SCALAR, name: type.repr};
-      break;
-    case Types.RECORD:
-      return {kind: type.kind, name: type.name};
-      break;
-    case Types.SCALAR:
-      return {kind: type.current.type.kind, name: type.current.type.repr};
-      break;
-    default:
-      return {kind: "unknown", name: "unknown"};
-  }
-}
 
 /**
  * Generates a new MemoryContent type.
@@ -85,4 +66,23 @@ export function MemoryContent(context, ref, {start, end, free}) {
 
 function buildField(name, size, type, address) {
   return {name, size, type, address};
+}
+
+function getType(type) {
+  switch (type.kind) {
+    case Types.POINTER:
+      return {kind: type.kind, type: getType(type.pointee)};
+      break;
+    case Types.BUILTIN:
+      return {kind: Types.SCALAR, name: type.repr};
+      break;
+    case Types.RECORD:
+      return {kind: type.kind, name: type.name};
+      break;
+    case Types.SCALAR:
+      return {kind: type.current.type.kind, name: type.current.type.repr};
+      break;
+    default:
+      return {kind: "unknown", name: "unknown"};
+  }
 }
