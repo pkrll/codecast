@@ -3,9 +3,9 @@ import { enumerateHeapBlocks } from '../heap';
 import * as C from 'persistent-c';
 
 export const Dimensions = {
-  HEIGHT: 20,
+  HEIGHT: 30,
   WIDTH: 60,
-  X: 100
+  X: 350
 };
 /**
  * Determines whether the given pointer is a string.

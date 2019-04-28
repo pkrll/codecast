@@ -35,14 +35,14 @@ export function MemoryContent(context, ref, {start, end, free}) {
   const pointer = ref.type.pointee;
 
   const value = (pointer.repr == "void")
-              ? {}
+              ? {fields: []}
               : readValue(context, ref.type, ref.address);
 
   // The type of the allocated block consist of kind and name
   // where kind is pointer|scalar|record and name is either the
   // name of a record/structure or the name of the built-in type.
   this.type = getType(pointer);
-  this.size = pointer.size;
+  this.size = pointer.size || (end - start + 1); // void types have size 0, for some reason
   this.address = ref.address;
   this.fields  = [];
   this.free = free;

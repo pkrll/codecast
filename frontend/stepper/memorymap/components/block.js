@@ -7,16 +7,17 @@ class Block extends React.Component {
   }
 
   render() {
-    const { memory, block } = this.props;
+    const { memory, block, scale } = this.props;
 
     let content = [];
     let previousSize = 0;
+    const height = Dimensions.HEIGHT * scale;
 
     if (block.fields) {
       content = block.fields.map((field, i) => {
         const offsetTop = previousSize;
-        previousSize += field.size * Dimensions.HEIGHT;
-        return (<Field key={i} field={field} offsetTop={offsetTop} memory={memory} />)
+        previousSize += field.size * height;
+        return (<Field key={i} field={field} offsetTop={offsetTop} memory={memory} scale={scale} />)
       });
     } else {
       console.log("Error: Fields missing");
@@ -33,15 +34,17 @@ class Block extends React.Component {
   }
 }
 
-function Field({memory, field, offsetTop}) {
-  const height = field.size * Dimensions.HEIGHT;
+function Field({memory, field, offsetTop, scale}) {
+  const height = field.size * Dimensions.HEIGHT * scale;
+  const width = Dimensions.WIDTH * scale;
   const fieldNameY = offsetTop + 15;
   const contentY = offsetTop + 30;
   const content = getValueOf(memory.values[field.address]);
+  const transformation = "";//"translate("+(Dimensions.X * scale)+" "+(offsetTop)+") scale("+scale+" " + scale +") translate("+(-Dimensions.X * scale)+" "+(-offsetTop)+")";
 
   return (
     <g>
-      <rect y={offsetTop} x={Dimensions.X} width="60" height={height} stroke="blue"></rect>
+      <rect y={offsetTop} x={Dimensions.X} width={width} height={height} stroke="blue" transform={transformation}></rect>
       <text y={fieldNameY} x={Dimensions.X} fontSize='12px' fontWeight='bold' fill='crimson'>
         {field.name}
       </text>

@@ -16,7 +16,9 @@ import DetailedGraph from './components/detailedgraph';
 export default function (bundle, deps) {
 
 	bundle.defineAction('memoryChanged', 'memoryChanged');
+	bundle.defineAction('memoryMapZoom', 'memoryMapZoom');
 	bundle.addReducer('memoryChanged', memoryChanged);
+	bundle.addReducer('memoryMapZoom', memoryMapZoom);
 	bundle.use('stepperViewControlsChanged', 'getStepperDisplay');
 
 	function MemoryMapSelector (state, props) {
@@ -24,15 +26,24 @@ export default function (bundle, deps) {
 		return {state: stepperState};
 	}
 
-	bundle.defineView('MemoryMap', MemoryMapSelector, class MemoryMap extends React.PureComponent {
+	bundle.defineView('MemoryMap', MemoryMapSelector, class MemoryMap extends React.Component {
 		/**
 		 * Updates the memoryContent structure in the store.
 		 *
 		 * @param  {Object} payload  The new memoryContent object.
 		 */
-		updateMemoryContent = payload => {
+		updateMemoryContent = (payload) => {
 			this.props.dispatch({type: "memoryChanged", payload});
 		};
+
+    zoom = zoom => {
+      if (zoom < 1) zoom = 1;
+      this.props.dispatch({type: deps.stepperViewControlsChanged, key: 'view1', update: {zoom}});
+    };
+
+    shouldComponentUpdate(nextProps) {
+      return true;
+    }
 
 		render () {
 			const { state } = this.props;
@@ -49,6 +60,7 @@ export default function (bundle, deps) {
 			for (let directive of ordered) {
 				const {key, kind} = directive;
 				const dirControls = controls.get(key, Immutable.Map());
+        const zoom = dirControls.get('zoom', 1);
 				const hide = dirControls.get('hide', false);
 
 				if (kind == "showGraph" && hide == false) {
@@ -57,14 +69,16 @@ export default function (bundle, deps) {
 					: 1;
 
 					if (detailLevel >= 1) {
-						components.push(<DetailedGraph key={key} context={context} startAddress={startAddress} maxAddress={maxAddress}/>);
+						components.push(<DetailedGraph key={key} context={context} startAddress={startAddress} maxAddress={maxAddress} updateMemory={this.updateMemoryContent} scale={zoom} onZoom={this.zoom}/>);
 					} else {
-						components.push(<div key={key}>Hello World!</div>);
+						// TODO: Others??
 					}
 				}
 			}
 
-			return (<div>{components}</div>);
+			return (<div>
+        {components}
+        </div>);
 		};
 
 	});
@@ -79,22 +93,19 @@ export default function (bundle, deps) {
 function memoryChanged(state, action) {
 	const { payload } = action;
 	return state.updateIn(['stepper', 'current'], function(stepperState) {
-		let { memoryContents } = stepperState;
-
-		// Object.keys(payload.blocks).map((key, _) => {
-		// 	memoryContents.blocks[key] = payload.blocks[key];
-		// });
-    //
-		// Object.keys(payload.fields).map((key, _) => {
-		// 	memoryContents.fields[key] = payload.fields[key];
-		// });
-    //
-		// Object.keys(payload.values).map((key, _) => {
-		// 	memoryContents.values[key] = payload.values[key];
-		// });
-
 		stepperState.memoryContents = payload;
-
 		return stepperState;
 	});
+}
+
+function memoryMapZoom(state, action) {
+  const { payload } = action;
+
+  return state.updateIn(['stepper', 'current'], function(stepperState) {
+
+
+    stepperState.memoryContents.zoom = zoom;
+
+    return stepperState;
+  });
 }
