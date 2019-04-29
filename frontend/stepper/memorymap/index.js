@@ -49,9 +49,9 @@ export default function (bundle, deps) {
 			const { state } = this.props;
 			if (!state) return false;
 
-			const { core, oldCore, memoryContents, directives, controls } = state;
+			const { core, oldCore, memoryGraph, directives, controls, analysis } = state;
 			const { ordered }  = directives;
-			const context      = { core, oldCore, memoryContents };
+			const context      = { core, oldCore, memoryGraph, analysis };
 			const maxAddress   = core.memory.size - 1;
 			const startAddress = 0;
 
@@ -69,7 +69,7 @@ export default function (bundle, deps) {
 					: 1;
 
 					if (detailLevel >= 1) {
-						components.push(<DetailedGraph key={key} context={context} startAddress={startAddress} maxAddress={maxAddress} updateMemory={this.updateMemoryContent} scale={zoom} onZoom={this.zoom}/>);
+						components.push(<DetailedGraph key={key} context={context} startAddress={startAddress} maxAddress={maxAddress} scale={zoom} onZoom={this.zoom}/>);
 					} else {
 						// TODO: Others??
 					}
@@ -93,7 +93,7 @@ export default function (bundle, deps) {
 function memoryChanged(state, action) {
 	const { payload } = action;
 	return state.updateIn(['stepper', 'current'], function(stepperState) {
-		stepperState.memoryContents = payload;
+		stepperState.memoryGraph = payload;
 		return stepperState;
 	});
 }
@@ -104,7 +104,7 @@ function memoryMapZoom(state, action) {
   return state.updateIn(['stepper', 'current'], function(stepperState) {
 
 
-    stepperState.memoryContents.zoom = zoom;
+    stepperState.memoryGraph.zoom = zoom;
 
     return stepperState;
   });

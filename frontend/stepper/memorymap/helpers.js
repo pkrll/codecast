@@ -1,4 +1,4 @@
-import { MemoryContent, Types } from './memorycontent';
+import { StringLiteral, StackVariable, StackFrame, MemoryContent, Types } from './memorycontent';
 import { enumerateHeapBlocks } from '../heap';
 import * as C from 'persistent-c';
 
@@ -7,6 +7,52 @@ export const Dimensions = {
   WIDTH: 60,
   X: 350
 };
+/**
+ * Builds a representation over the stack area, with
+ * all its uninitialized variables.
+ *
+ * The function also retrieves all string literals.
+ *
+ * @param  {Object} core        The current context.
+ * @param  {Object} memoryGraph Empty memory graph object.
+ * @param  {Object} node        An AST node.
+ */
+export function mapStaticMemory(core, memoryGraph, node) {
+  let heapStart = core.heapStart;
+  let currentScope = undefined;
+  C.forEachNode(node, function (node) {
+    if (node[0] === 'StringLiteral') {
+      // Create a StringLiteral object
+      // This code is borrowed from Persistent-C.
+      const value = C.stringValue(node[1].value);
+      const ref = new C.PointerValue(value.type, heapStart);
+      const ptr = core.literals.get(node, ref);
+      const literal = new StringLiteral(value.elements, ptr);
+      memoryGraph.stringLiterals[literal.address] = literal;
+
+      heapStart += value.type.size;
+    } else if (node[0] == 'VarDecl') {
+      // Adds an uninitialized stack variable to the
+      // the dictionary belonging to the current function.
+      if (memoryGraph.stackArea.variables[currentScope]) {
+        const name = node[1].name;
+        const ref  = {};
+        memoryGraph.stackArea.variables[currentScope][name] = ref;
+      }
+    } else if (node[0] == 'FunctionDecl') {
+      currentScope = node[2][0][1].identifier;
+      const prototype = node[2][1];
+      if (prototype[0] == "FunctionNoProtoType") {
+        // Initializes a dictionary for the current function
+        // analyzed. The keys of the dictionary will be the
+        // name of uninitialized variables (set above).
+        // When the variable is initialized, the values of the
+        // entry will be a reference to that (StackVariable) object.
+        memoryGraph.stackArea.variables[currentScope] = {};
+      }
+    }
+  });
+}
 /**
  * Determines whether the given pointer is a string.
  *
@@ -91,21 +137,27 @@ export function PointerType(source, target) {
  *                               first available memory address.
  */
 export function mapMemory(context, startAddress, maxAddress) {
-  const { memoryContents } = context;
+  const { memoryGraph, analysis } = context;
   let { scope } = context.core;
 
-  while (scope && scope.limit <= maxAddress + 1) {
-    const {kind, name, ref} = scope;
-    if (kind == "variable") {
-      // TODO: Keep track of stack variables?
-    }
+  let heap = memoryGraph.heapArea;
+  let stackArea = memoryGraph.stackArea;
 
-    scope = scope.parent;
-  }
+  let stack = [];
+  // Retrieve stack content
+  analysis.frames.forEach(function(frame, depth) {
+    if (frame.get('func').body[1].range) {
+      const stackFrame = new StackFrame(frame, stackArea);
+      stack.unshift(stackFrame);
+    }
+  });
+
+  stackArea.callStack = stack;
 
   let allocatedBlocks = {};
+  let endAddress = 0;
   // Collects information on allocated blocks, used below for
-  // building a representation of the memory contents.
+  // building a representation of the heap memory.
   for (let block of enumerateHeapBlocks(context.core)) {
     allocatedBlocks[block.start] = {
       start: block.start,
@@ -115,17 +167,17 @@ export function mapMemory(context, startAddress, maxAddress) {
 
     if (block.free) {
       // Makes sure a free'd block is marked as free
-      if (memoryContents.blocks.hasOwnProperty(block.start)) {
-        memoryContents.blocks[block.start].free = block.free;
+      if (heap.allocatedBlocks.hasOwnProperty(block.start)) {
+        heap.allocatedBlocks[block.start].free = block.free;
       }
 
-      if (block.start > memoryContents.endAddress) {
-        memoryContents.endAddress = block.start;
+      if (block.start > endAddress) {
+        endAddress = block.start;
       }
     }
   }
 
-  memoryContents.endAddress -= context.core.heapStart;
+  heap.endAddress = endAddress - context.core.heapStart;
   // Every memory event is recorded in the memory log. By mapping every
   // "store" operation to an allocated block, we can find information
   // on every allocation made.
@@ -137,15 +189,15 @@ export function mapMemory(context, startAddress, maxAddress) {
 
       if (allocatedBlocks.hasOwnProperty(value.address)) {
         const content = new MemoryContent(context, value, allocatedBlocks[value.address]);
-        memoryContents.blocks[content.address] = content;
-        Object.assign(memoryContents.fields, content.fieldAddresses);
+        heap.allocatedBlocks[content.address] = content;
+        Object.assign(heap.fields, content.fieldAddresses);
       }
 
-      if (memoryContents.fields.hasOwnProperty(source.address)) {
+      if (heap.fields.hasOwnProperty(source.address)) {
         const type = value.constructor.name;
 
         if (type == "IntegralValue") {
-          memoryContents.values[source.address] = new ValueType(source.address, value.number);
+          heap.values[source.address] = new ValueType(source.address, value.number);
         } else {
           let ref = undefined;
           // Strings are handled as ValueType types, instead of pointers. This
@@ -157,11 +209,14 @@ export function mapMemory(context, startAddress, maxAddress) {
             ref = new PointerType(source.address, value.address);
           }
 
-          memoryContents.values[source.address] = ref;
+          heap.values[source.address] = ref;
         }
       }
     }
   }
 
-  return { memory: memoryContents };
+  memoryGraph.heapArea = heap;
+  memoryGraph.stackArea = stackArea;
+
+  return { memory: memoryGraph, stack };
 }

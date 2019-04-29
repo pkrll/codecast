@@ -25,7 +25,7 @@ class Block extends React.Component {
 
     return (
       <g fill="white" opacity={block.free ? '0.5': '1'}>
-        <text y={previousSize + 15} x={Dimensions.X} fontSize='12px' fontWeight='bold' fill='grey'>
+        <text y={previousSize + 15 * scale} style={{fontSize: 12 * scale + `px`}} fontWeight='bold' fill='grey'>
           {block.type.name}
         </text>
         {content}
@@ -37,18 +37,17 @@ class Block extends React.Component {
 function Field({memory, field, offsetTop, scale}) {
   const height = field.size * Dimensions.HEIGHT * scale;
   const width = Dimensions.WIDTH * scale;
-  const fieldNameY = offsetTop + 15;
-  const contentY = offsetTop + 30;
+  const fieldNameY = offsetTop + 15 * scale;
+  const contentY = offsetTop + 30 * scale;
   const content = getValueOf(memory.values[field.address]);
-  const transformation = "";//"translate("+(Dimensions.X * scale)+" "+(offsetTop)+") scale("+scale+" " + scale +") translate("+(-Dimensions.X * scale)+" "+(-offsetTop)+")";
 
   return (
     <g>
-      <rect y={offsetTop} x={Dimensions.X} width={width} height={height} stroke="blue" transform={transformation}></rect>
-      <text y={fieldNameY} x={Dimensions.X} fontSize='12px' fontWeight='bold' fill='crimson'>
+      <rect y={offsetTop} width={width} height={height} stroke="blue"></rect>
+      <text y={fieldNameY} style={{fontSize: 12 * scale + `px`}} fontWeight='bold' fill='crimson'>
         {field.name}
       </text>
-      <text y={contentY} x={Dimensions.X} dominantBaseline="middle" fontSize='15px' fill='black'>
+      <text y={contentY} dominantBaseline="middle" style={{fontSize: 15 * scale + `px`}} fill='black'>
         {content}
       </text>
     </g>

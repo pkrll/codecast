@@ -40,6 +40,9 @@ import IoBundle from './io/index';
 import ViewsBundle from './views/index';
 import ArduinoBundle from './arduino';
 
+import { mapMemory, mapStaticMemory } from './memorymap/helpers';
+
+
 /* TODO: clean-up */
 import {analyseState, collectDirectives} from './analysis';
 
@@ -164,6 +167,8 @@ function enrichStepperState (stepperState) {
   stepperState.directives = collectDirectives(analysis.frames, focusDepth);
   // TODO? initialize controls for each directive added,
   //       clear controls for each directive removed (except 'stack').
+  const maxAddress = core.memory.size - 1;
+  stepperState.memoryGraph = mapMemory(stepperState, 0, maxAddress).memory;
   return stepperState;
 };
 
@@ -695,13 +700,30 @@ function postLink (scope, actionTypes) {
       memorySize: 0x10000,
       stackSize: 4096,
     };
-    stepperState.memoryContents = stepperState.memoryContents || { blocks: {}, fields: {}, values: {}, endAddress: 0 };
+    let memoryGraph = {
+      stackArea: {
+        callStack: [],
+        variables: {}
+      },
+      heapArea: {
+        allocatedBlocks: {},
+        fields: {},
+        values: {},
+        endAddress: 0
+      },
+      stringLiterals: {}
+    };
+
     /* Set up the core. */
     const core0 = stepperState.oldCore = C.makeCore(options.memorySize);
     /* Execute declarations and copy strings into memory */
     const core1 = stepperState.core = {...core0};
     const decls = syntaxTree[2];
     C.execDecls(core1, decls);
+    // Create representation of stack and retrieve string literals
+    decls.forEach(node => mapStaticMemory(stepperState.core, memoryGraph, node));
+
+    stepperState.memoryGraph = memoryGraph;
     /* Set up the call to the main function. */
     C.setupCall(core1, 'main');
   });
