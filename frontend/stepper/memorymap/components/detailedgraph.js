@@ -4,7 +4,8 @@ import {Button, ButtonGroup} from '@blueprintjs/core';
 import classnames from 'classnames';
 import Immutable from 'immutable';
 import * as C from 'persistent-c';
-import { Dimensions, PointerType, ValueType, mapMemory } from '../helpers';
+import { Dimensions, mapMemory } from '../helpers';
+import { PointerType, ValueType } from '../memorycontent';
 import Line from './line';
 import Block from './block';
 
@@ -13,12 +14,12 @@ import './../../../style.scss';
 class DetailedGraph extends React.PureComponent {
 
   render() {
-    const { context, startAddress, maxAddress, scale, onZoom } = this.props;
-    const { heapArea } = context.memoryGraph;
+    const { context, scale, onZoom } = this.props;
+    const { heap } = context.memoryGraph;
     let offset = 20;
     let n = 0;
-    const height = memory.endAddress * Dimensions.HEIGHT * scale + 100;
-
+    const height = heap.bytesAllocated * Dimensions.HEIGHT * scale + 100;
+    console.log(context.memoryGraph);
     const heapStart = context.core.heapStart;
 
     return (
@@ -42,26 +43,29 @@ class DetailedGraph extends React.PureComponent {
             </g>
           </svg>
           <svg y="20">
-            <rect y="20" width="175" height="100" stroke="blue"/>
+            <g>
+              <rect width="175" height="100" stroke="blue" fill="none"/>
+              
+            </g>
           </svg>
           {
-            Object.keys(heapArea.allocatedBlocks).map((key, index) => {
-              const content = heapArea.allocatedBlocks[key];
+            Object.keys(heap.allocatedBlocks).map((key, index) => {
+              const content = heap.allocatedBlocks[key];
               const y = (content.address - heapStart) * Dimensions.HEIGHT * scale - Dimensions.HEIGHT * 2;
 
               return (
                 <svg y={y} x={Dimensions.X} key={index}>
-                  <Block key={index} block={content} memory={heapArea} scale={scale} />
+                  <Block key={index} block={content} values={heap.values} scale={scale} />
                 </svg>
               )
             })
           }
           {
-            Object.keys(heapArea.values).map((key, index) => {
-              const value = heapArea.values[key];
+            Object.keys(heap.values).map((key, index) => {
+              const value = heap.values[key];
 
               if (value.constructor.name == PointerType.name) {
-                if (heapArea.fields[value.target] && heapArea.fields[value.source]) {
+                if (heap.cellMapping[value.target] && heap.cellMapping[value.source]) {
                   n += 1;
                   return (<Line key={key} index={n} fromAddress={value.source} toAddress={value.target} startAddress={heapStart} scale={scale}/>)
                 }

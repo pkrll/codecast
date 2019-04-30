@@ -7,7 +7,7 @@ class Block extends React.Component {
   }
 
   render() {
-    const { memory, block, scale } = this.props;
+    const { values, block, scale } = this.props;
 
     let content = [];
     let previousSize = 0;
@@ -17,7 +17,7 @@ class Block extends React.Component {
       content = block.fields.map((field, i) => {
         const offsetTop = previousSize;
         previousSize += field.size * height;
-        return (<Field key={i} field={field} offsetTop={offsetTop} memory={memory} scale={scale} />)
+        return (<Field key={i} field={field} offsetTop={offsetTop} values={values} scale={scale} />)
       });
     } else {
       console.log("Error: Fields missing");
@@ -34,12 +34,12 @@ class Block extends React.Component {
   }
 }
 
-function Field({memory, field, offsetTop, scale}) {
+function Field({values, field, offsetTop, scale}) {
   const height = field.size * Dimensions.HEIGHT * scale;
   const width = Dimensions.WIDTH * scale;
   const fieldNameY = offsetTop + 15 * scale;
   const contentY = offsetTop + 30 * scale;
-  const content = getValueOf(memory.values[field.address]);
+  const content = getValueOf(values[field.address]);
 
   return (
     <g>

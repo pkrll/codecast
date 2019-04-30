@@ -1,4 +1,4 @@
-import { StringLiteral, StackVariable, StackFrame, MemoryContent, Types } from './memorycontent';
+import { StringLiteral, StackVariable, StackFrame, MemoryContent, Types, ValueType, PointerType } from './memorycontent';
 import { enumerateHeapBlocks } from '../heap';
 import * as C from 'persistent-c';
 
@@ -7,6 +7,30 @@ export const Dimensions = {
   WIDTH: 60,
   X: 350
 };
+/**
+ * Retrieves the type of a variable from a node in the AST.
+ *
+ * @param  {Array}  node The AST node.
+ * @return {Object}      The type of the variable.
+ */
+function getTypeFromNode(node) {
+  const type = node[0][0];
+
+  switch (type) {
+    case "PointerType":
+      return {kind: type, type: getTypeFromNode(node[0][2])};
+      break;
+    case "BuiltinType":
+    case "RecordType":
+      return {kind: type, name: node[0][1].name};
+      break;
+    case "ElaboratedType":
+      return getTypeFromNode(node[0][2]);
+      break;
+    default:
+      return {kind: 'unknown'};
+  }
+}
 /**
  * Builds a representation over the stack area, with
  * all its uninitialized variables.
@@ -28,45 +52,34 @@ export function mapStaticMemory(core, memoryGraph, node) {
       const ref = new C.PointerValue(value.type, heapStart);
       const ptr = core.literals.get(node, ref);
       const literal = new StringLiteral(value.elements, ptr);
-      memoryGraph.stringLiterals[literal.address] = literal;
+      memoryGraph.data.literals[literal.address] = literal;
 
       heapStart += value.type.size;
     } else if (node[0] == 'VarDecl') {
-      // Adds an uninitialized stack variable to the
+      // Adds an unevaluated stack variable to the
       // the dictionary belonging to the current function.
-      if (memoryGraph.stackArea.variables[currentScope]) {
+      const func = memoryGraph.stack.functions[currentScope]
+      if (func !== undefined) {
         const name = node[1].name;
-        const ref  = {};
-        memoryGraph.stackArea.variables[currentScope][name] = ref;
+        const type = getTypeFromNode(node[2]);
+        const ref  = {name, type};
+
+        func.uninitialized[name] = ref;
       }
     } else if (node[0] == 'FunctionDecl') {
       currentScope = node[2][0][1].identifier;
-      const prototype = node[2][1];
-      if (prototype[0] == "FunctionNoProtoType") {
-        // Initializes a dictionary for the current function
-        // analyzed. The keys of the dictionary will be the
-        // name of uninitialized variables (set above).
-        // When the variable is initialized, the values of the
-        // entry will be a reference to that (StackVariable) object.
-        memoryGraph.stackArea.variables[currentScope] = {};
-      }
+      // Initializes a dictionary for the current function
+      // analyzed. The keys of the dictionary will be the
+      // name of unevaluated variables (set above).
+      // When the variable is evaluated, the values of the
+      // entry will be a reference to that (StackVariable) object.
+      memoryGraph.stack.functions[currentScope] = {
+        identifier: currentScope,
+        variables: {},
+        uninitialized: {}
+      };
     }
   });
-}
-/**
- * Determines whether the given pointer is a string.
- *
- * @param  {Object}  value The pointer.
- * @return {Boolean}       True if it is a string.
- */
-export function isString(value) {
-  if (value && value.type.kind == "pointer") {
-    const pointer = value.type.pointee;
-
-    return (pointer.kind == "builtin" && pointer.repr == "char");
-  }
-
-  return false;
 }
 /**
  * Returns the value of a ValueType or PointerType type.
@@ -92,32 +105,6 @@ export function randomString(length) {
   return (Math.random() + 1).toString(36).substring(length);
 }
 /**
- * A ValueType represents a value type data type, such as
- * integers or chars.
- *
- * Strings are treated as value types here.
- *
- * @param       {Int} source The source memory address.
- * @param       {Any} value  The value.
- * @constructor
- */
-export function ValueType(source, value) {
-  this.source = source;
-  this.value = value;
-}
-/**
- * A PointerType represents a reference type data type.
- *
- *
- * @param       {Int} source The source memory address.
- * @param       {Int} target The target memory address.
- * @constructor
- */
-export function PointerType(source, target) {
-  this.source = source;
-  this.target = target;
-}
-/**
  * Retrieves the contents of the memory.
  *
  * This function gathers and returns information on everything
@@ -140,44 +127,36 @@ export function mapMemory(context, startAddress, maxAddress) {
   const { memoryGraph, analysis } = context;
   let { scope } = context.core;
 
-  let heap = memoryGraph.heapArea;
-  let stackArea = memoryGraph.stackArea;
+  let heap  = memoryGraph.heap;
+  let stack = memoryGraph.stack;
 
-  let stack = [];
-  // Retrieve stack content
+  let stackFrames = [];
+  // Build the stack frames
   analysis.frames.forEach(function(frame, depth) {
     if (frame.get('func').body[1].range) {
-      const stackFrame = new StackFrame(frame, stackArea);
-      stack.unshift(stackFrame);
+      const stackFrame = new StackFrame(frame, stack);
+      stackFrames.unshift(stackFrame);
     }
   });
 
-  stackArea.callStack = stack;
+  stack.frames = stackFrames;
 
   let allocatedBlocks = {};
   let endAddress = 0;
   // Collects information on allocated blocks, used below for
   // building a representation of the heap memory.
   for (let block of enumerateHeapBlocks(context.core)) {
-    allocatedBlocks[block.start] = {
-      start: block.start,
-      end: block.end,
-      free: block.free
-    };
+    allocatedBlocks[block.start] = { start: block.start, end: block.end, free: block.free };
 
     if (block.free) {
       // Makes sure a free'd block is marked as free
-      if (heap.allocatedBlocks.hasOwnProperty(block.start)) {
-        heap.allocatedBlocks[block.start].free = block.free;
-      }
-
       if (block.start > endAddress) {
         endAddress = block.start;
       }
     }
   }
 
-  heap.endAddress = endAddress - context.core.heapStart;
+  heap.bytesAllocated = endAddress - context.core.heapStart;
   // Every memory event is recorded in the memory log. By mapping every
   // "store" operation to an allocated block, we can find information
   // on every allocation made.
@@ -190,33 +169,30 @@ export function mapMemory(context, startAddress, maxAddress) {
       if (allocatedBlocks.hasOwnProperty(value.address)) {
         const content = new MemoryContent(context, value, allocatedBlocks[value.address]);
         heap.allocatedBlocks[content.address] = content;
-        Object.assign(heap.fields, content.fieldAddresses);
+        Object.assign(heap.cellMapping, content.fieldAddresses);
       }
 
-      if (heap.fields.hasOwnProperty(source.address)) {
-        const type = value.constructor.name;
-
-        if (type == "IntegralValue") {
-          heap.values[source.address] = new ValueType(source.address, value.number);
-        } else {
-          let ref = undefined;
-          // Strings are handled as ValueType types, instead of pointers. This
-          // makes it a lot easier to display the string in the memory representation.
-          if (isString(value)) {
-            const string = C.readString(context.core.memory, value);
-            ref = new ValueType(source.address, string);
-          } else {
-            ref = new PointerType(source.address, value.address);
-          }
-
-          heap.values[source.address] = ref;
-        }
+      if (heap.cellMapping.hasOwnProperty(source.address)) {
+        setValue(heap, source, value);
+      } else if (stack.variables.hasOwnProperty(source.address)) {
+        setValue(stack, source, value);
       }
     }
   }
 
-  memoryGraph.heapArea = heap;
-  memoryGraph.stackArea = stackArea;
+  memoryGraph.heap  = heap;
+  memoryGraph.stack = stack;
 
-  return { memory: memoryGraph, stack };
+  return memoryGraph;
+}
+
+function setValue(memory, source, value) {
+  const valueType  = value.constructor.name;
+  const srcAddress = source.address;
+
+  const data = (valueType === "IntegralValue")
+             ? new ValueType(srcAddress, value.number)
+             : new PointerType(srcAddress, value.address);
+
+  memory.values[srcAddress] = data;
 }

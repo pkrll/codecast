@@ -9,6 +9,32 @@ export const Types = {
   ARRAY: "array"
 };
 /**
+ * A ValueType represents a value type data type, such as
+ * integers or chars.
+ *
+ * Strings are treated as value types here.
+ *
+ * @param       {Int} source The source memory address.
+ * @param       {Any} value  The value.
+ * @constructor
+ */
+export function ValueType(source, value) {
+  this.source = source;
+  this.value = value;
+}
+/**
+ * A PointerType represents a reference type data type.
+ *
+ *
+ * @param       {Int} source The source memory address.
+ * @param       {Int} target The target memory address.
+ * @constructor
+ */
+export function PointerType(source, target) {
+  this.source = source;
+  this.target = target;
+}
+/**
  * Represents a string literal.
  *
  * @param       {Object} elements The elements of the char array.
@@ -36,37 +62,39 @@ export function StringLiteral(elements, ref) {
  * @param       {Object} ref  The reference.
  * @constructor
  */
-export function StackVariable(name, ref) {
+export function StackVariable(name, ref, type) {
   this.name = name;
-  this.type = getType(ref.type.pointee);
+  this.type = type || getType(ref.type.pointee);
   this.address = ref.address;
 }
 /**
  * Represents a stack frame.
  *
  * @param       {Object} frame     Information on the frame.
- * @param       {Object} stackArea The stack area object.
+ * @param       {Object} stack     The stack object.
  * @constructor
  */
-export function StackFrame(frame, stackArea) {
+export function StackFrame(frame, stack) {
   const func       = frame.get('func');
   const localMap   = frame.get('localMap');
   const localNames = frame.get('localNames');
 
   this.name = func.name;
   this.type = getType(func.type.pointee.result);
-  this.variables = [];
+  this.variables = {};
+  this.uninitialized = stack.functions[this.name].uninitialized;
   // Adds all initialized stack variables to the
   // function's lists of variables.
   localNames.forEach(name => {
     const type = localMap.get(name);
     const variable = new StackVariable(name, type.ref)
-    this.variables.push(variable);
-    // Maps the uninitialized variable to the initialized one.
-    stackArea.variables[this.name][name] = variable;
+    this.variables[variable.address] = variable;
+    // Remove an initialized variable from the uninitialized list
+    if (this.uninitialized[name]) delete this.uninitialized[name];
+    // This is so that we can access variables faster?
+    stack.variables[variable.address] = variable;
   });
 }
-
 /**
  * Represents a data type allocated on the heap.
  *

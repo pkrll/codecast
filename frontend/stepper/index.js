@@ -168,7 +168,7 @@ function enrichStepperState (stepperState) {
   // TODO? initialize controls for each directive added,
   //       clear controls for each directive removed (except 'stack').
   const maxAddress = core.memory.size - 1;
-  stepperState.memoryGraph = mapMemory(stepperState, 0, maxAddress).memory;
+  stepperState.memoryGraph = mapMemory(stepperState, 0, maxAddress);
   return stepperState;
 };
 
@@ -700,18 +700,24 @@ function postLink (scope, actionTypes) {
       memorySize: 0x10000,
       stackSize: 4096,
     };
+    // The data structure for the memory representation
+    // This should really be moved into the persistent-c library
     let memoryGraph = {
-      stackArea: {
-        callStack: [],
-        variables: {}
+      stack: {
+        frames: [],
+        variables: {},
+        functions: {},
+        values: {}
       },
-      heapArea: {
+      heap: {
         allocatedBlocks: {},
-        fields: {},
+        cellMapping: {},
         values: {},
-        endAddress: 0
+        bytesAllocated: 0
       },
-      stringLiterals: {}
+      data: {
+        literals: {}
+      }
     };
 
     /* Set up the core. */

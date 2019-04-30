@@ -51,9 +51,9 @@ export default function (bundle, deps) {
 
 			const { core, oldCore, memoryGraph, directives, controls, analysis } = state;
 			const { ordered }  = directives;
-			const context      = { core, oldCore, memoryGraph, analysis };
-			const maxAddress   = core.memory.size - 1;
+      const maxAddress   = core.memory.size - 1;
 			const startAddress = 0;
+			const context      = { core, oldCore, memoryGraph, analysis, maxAddress, startAddress };
 
 			let components = [];
 			// This component is displayed only when the directive showGraph is active.
@@ -69,16 +69,14 @@ export default function (bundle, deps) {
 					: 1;
 
 					if (detailLevel >= 1) {
-						components.push(<DetailedGraph key={key} context={context} startAddress={startAddress} maxAddress={maxAddress} scale={zoom} onZoom={this.zoom}/>);
+						components.push(<DetailedGraph key={key} context={context} scale={zoom} onZoom={this.zoom}/>);
 					} else {
 						// TODO: Others??
 					}
 				}
 			}
 
-			return (<div>
-        {components}
-        </div>);
+			return (<div>{components}</div>);
 		};
 
 	});
