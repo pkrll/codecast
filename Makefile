@@ -12,3 +12,6 @@ prod: start
 
 rebuild:
 	docker-compose build
+
+bash:
+	sudo docker exec -i -t codecast_codecast_1 /bin/bash
