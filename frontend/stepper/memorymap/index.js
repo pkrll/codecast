@@ -65,8 +65,8 @@ export default function (bundle, deps) {
 
 				if (kind == "showGraph" && hide == false) {
 					const detailLevel = (directive.byName.detail)
-					? directive.byName.detail[1]
-					: 1;
+					                  ? directive.byName.detail[1]
+					                  : 1;
 
 					if (detailLevel >= 1) {
 						components.push(<DetailedGraph key={key} context={context} scale={zoom} onZoom={this.zoom}/>);

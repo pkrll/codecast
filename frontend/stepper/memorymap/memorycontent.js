@@ -83,6 +83,7 @@ export function StackFrame(frame, stack) {
   this.type = getType(func.type.pointee.result);
   this.variables = {};
   this.uninitialized = stack.functions[this.name].uninitialized;
+  this.numberOfVariables = stack.functions[this.name].numberOfVariables;
   // Adds all initialized stack variables to the
   // function's lists of variables.
   localNames.forEach(name => {

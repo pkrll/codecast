@@ -7,7 +7,7 @@ class Block extends React.Component {
   }
 
   render() {
-    const { values, block, scale } = this.props;
+    const { values, block, scale, positions } = this.props;
 
     let content = [];
     let previousSize = 0;
@@ -17,7 +17,7 @@ class Block extends React.Component {
       content = block.fields.map((field, i) => {
         const offsetTop = previousSize;
         previousSize += field.size * height;
-        return (<Field key={i} field={field} offsetTop={offsetTop} values={values} scale={scale} />)
+        return (<Field key={i} positions={positions} field={field} offsetTop={offsetTop} values={values} scale={scale} />)
       });
     } else {
       console.log("Error: Fields missing");
@@ -34,24 +34,29 @@ class Block extends React.Component {
   }
 }
 
-function Field({values, field, offsetTop, scale}) {
-  const height = field.size * Dimensions.HEIGHT * scale;
-  const width = Dimensions.WIDTH * scale;
-  const fieldNameY = offsetTop + 15 * scale;
-  const contentY = offsetTop + 30 * scale;
-  const content = getValueOf(values[field.address]);
+class Field extends React.PureComponent {
 
-  return (
-    <g>
-      <rect y={offsetTop} width={width} height={height} stroke="blue"></rect>
-      <text y={fieldNameY} style={{fontSize: 12 * scale + `px`}} fontWeight='bold' fill='crimson'>
-        {field.name}
-      </text>
-      <text y={contentY} dominantBaseline="middle" style={{fontSize: 15 * scale + `px`}} fill='black'>
-        {content}
-      </text>
-    </g>
-  );
+  render() {
+    const {values, field, offsetTop, scale, elRef } = this.props;
+    const height = field.size * Dimensions.HEIGHT * scale;
+    const width = Dimensions.WIDTH * scale;
+    const fieldNameY = offsetTop + 15 * scale;
+    const contentY = offsetTop + 30 * scale;
+    const content = getValueOf(values[field.address]);
+
+    return (
+      <g>
+        <rect ref={elRef} y={offsetTop} width={width} height={height} stroke="blue"></rect>
+        <text y={fieldNameY} style={{fontSize: 12 * scale + `px`}} fontWeight='bold' fill='crimson'>
+          {field.name}
+        </text>
+        <text y={contentY} dominantBaseline="middle" style={{fontSize: 15 * scale + `px`}} fill='black'>
+          {content}
+        </text>
+      </g>
+    );
+  }
 }
 
-export default Block;
+//export default Block;
+export default Field;

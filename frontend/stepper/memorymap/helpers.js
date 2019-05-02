@@ -65,6 +65,7 @@ export function mapStaticMemory(core, memoryGraph, node) {
         const ref  = {name, type};
 
         func.uninitialized[name] = ref;
+        func.numberOfVariables += 1;
       }
     } else if (node[0] == 'FunctionDecl') {
       currentScope = node[2][0][1].identifier;
@@ -76,7 +77,8 @@ export function mapStaticMemory(core, memoryGraph, node) {
       memoryGraph.stack.functions[currentScope] = {
         identifier: currentScope,
         variables: {},
-        uninitialized: {}
+        uninitialized: {},
+        numberOfVariables: 0
       };
     }
   });
@@ -135,7 +137,7 @@ export function mapMemory(context, startAddress, maxAddress) {
   analysis.frames.forEach(function(frame, depth) {
     if (frame.get('func').body[1].range) {
       const stackFrame = new StackFrame(frame, stack);
-      stackFrames.unshift(stackFrame);
+      stackFrames.push(stackFrame);
     }
   });
 
