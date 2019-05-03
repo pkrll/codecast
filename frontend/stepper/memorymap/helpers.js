@@ -39,14 +39,11 @@ function getTypeFromNode(node) {
   switch (type) {
     case "PointerType":
       return {kind: type, type: getTypeFromNode(node[0][2])};
-      break;
     case "BuiltinType":
     case "RecordType":
       return {kind: type, name: node[0][1].name};
-      break;
     case "ElaboratedType":
       return getTypeFromNode(node[0][2]);
-      break;
     default:
       return {kind: 'unknown'};
   }
@@ -124,6 +121,7 @@ export function getValueOf(data) {
 }
 /**
  * Generates a random string of specified length.
+ *
  * @param  {Int}    length The number of characters.
  * @return {String}        A random string.
  */
@@ -131,28 +129,13 @@ export function randomString(length) {
   return (Math.random() + 1).toString(36).substring(length);
 }
 /**
- * Retrieves the contents of the memory.
- *
- * This function gathers and returns information on everything
- * allocated on the heap. The return value is an object with:
- *
- *    - MemoryContents: This structure is part of the context,
- *                      and consists of `blocks`, `fields` and
- *                      `values`.
- *    - lastAddress:    This is the first available address on
- *                      the heap, used for drawing purposes.
+ * This function maps the memory of the running program.
  *
  * @param  {Object} context      The current context.
- * @param  {Int}    startAddress The start address of the heap.
- * @param  {Int}    maxAddress   The maximum address of the heap.
- *
- * @return {Object}              MemoryContents updated and the
- *                               first available memory address.
+ * @return {Object}              MemoryGraph updated.
  */
-export function mapMemory(context, startAddress, maxAddress) {
+export function mapMemory(context) {
   const { memoryGraph, analysis } = context;
-  let { scope } = context.core;
-
   let heap  = memoryGraph.heap;
   let stack = memoryGraph.stack;
 
@@ -171,7 +154,7 @@ export function mapMemory(context, startAddress, maxAddress) {
   stack.height = stackHeight;
 
   let allocatedBlocks = {};
-  let endAddress = 0;
+  let bytesAllocated  = 0;
   // Collects information on allocated blocks, used below for
   // building a representation of the heap memory.
   for (let block of enumerateHeapBlocks(context.core)) {
@@ -182,16 +165,14 @@ export function mapMemory(context, startAddress, maxAddress) {
       if (heap.allocatedBlocks.hasOwnProperty(block.start)) {
         heap.allocatedBlocks[block.start].free = block.free;
       }
-      if (block.start > endAddress) {
-        endAddress = block.start;
+      // This is mainly used for the height of the SVG canvas
+      if (block.start > bytesAllocated) {
+        bytesAllocated = block.start - context.core.heapStart;
       }
     }
   }
 
-  const bytesAllocated = endAddress - context.core.heapStart;
-  if (bytesAllocated > heap.bytesAllocated) {
-    heap.bytesAllocated = bytesAllocated;
-  }
+  if (bytesAllocated > heap.bytesAllocated) heap.bytesAllocated = bytesAllocated;
   // Every memory event is recorded in the memory log. By mapping every
   // "store" operation to an allocated block, we can find information
   // on every allocation made.

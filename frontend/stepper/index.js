@@ -168,7 +168,7 @@ function enrichStepperState (stepperState) {
   // TODO? initialize controls for each directive added,
   //       clear controls for each directive removed (except 'stack').
   const maxAddress = core.memory.size - 1;
-  stepperState.memoryGraph = mapMemory(stepperState, 0, maxAddress);
+  stepperState.memoryGraph = mapMemory(stepperState);
   return stepperState;
 };
 
