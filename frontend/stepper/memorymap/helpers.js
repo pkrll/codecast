@@ -1,4 +1,4 @@
-import { StringLiteral, StackVariable, StackFrame, MemoryContent, Types, ValueType, PointerType } from './memorycontent';
+import { StringLiteral, StackVariable, StackFrame, MemoryContent, ValueType, PointerType, constructDataTypeFromValue } from './memorycontent';
 import { enumerateHeapBlocks } from '../heap';
 import * as C from 'persistent-c';
 
@@ -93,7 +93,11 @@ export function getValueOf(data) {
   if (data !== undefined) {
     const type = data.constructor.name;
     if (type == ValueType.name)   return data.value;
-    if (type == PointerType.name) return data.target;
+    if (type == PointerType.name) return data.value;
+
+    console.error("Data type not defined");
+
+    return undefined;
   }
 
   return randomString(7);
@@ -189,12 +193,7 @@ export function mapMemory(context, startAddress, maxAddress) {
 }
 
 function setValue(memory, source, value) {
-  const valueType  = value.constructor.name;
-  const srcAddress = source.address;
-
-  const data = (valueType === "IntegralValue")
-             ? new ValueType(srcAddress, value.number)
-             : new PointerType(srcAddress, value.address);
-
-  memory.values[srcAddress] = data;
+  const address = source.address;
+  const data = constructDataTypeFromValue(address, value);
+  memory.values[address] = data;
 }

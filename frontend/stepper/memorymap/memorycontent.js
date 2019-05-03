@@ -9,30 +9,71 @@ export const Types = {
   ARRAY: "array"
 };
 /**
- * A ValueType represents a value type data type, such as
+ * Returns a data structure representing a memory value.
+ *
+ * @param  {Int}    address The source address.
+ * @param  {Object} value   The value type.
+ * @return {Object}         A ValueType, PointerType or ArrayType.
+ */
+export function constructDataTypeFromValue(address, value) {
+  const valueType = value.constructor.name;
+
+  switch (valueType) {
+    case "IntegralValue":
+      return new ValueType(address, value.number);
+    case "PointerValue":
+      return new PointerType(address, value.address);
+    case "ArrayValue":
+      return new ArrayType(address, value.elements, value.type);
+  }
+
+  return undefined;
+}
+/**
+ * Represents a value type data type, such as
  * integers or chars.
  *
- * Strings are treated as value types here.
- *
- * @param       {Int} source The source memory address.
- * @param       {Any} value  The value.
+ * @param       {Int} address The source memory address.
+ * @param       {Any} value   The value.
  * @constructor
  */
-export function ValueType(source, value) {
-  this.source = source;
+export function ValueType(address, value) {
+  this.address = address;
   this.value = value;
 }
 /**
- * A PointerType represents a reference type data type.
+ * Represents a pointer type data type.
  *
  *
- * @param       {Int} source The source memory address.
- * @param       {Int} target The target memory address.
+ * @param       {Int} address The source memory address.
+ * @param       {Int} value   The target memory address.
  * @constructor
  */
-export function PointerType(source, target) {
-  this.source = source;
-  this.target = target;
+export function PointerType(address, value) {
+  this.address = address;
+  this.value = value;
+}
+/**
+ * Represents an array data type.
+ *
+ * @param       {Int}    address  The source memory address.
+ * @param       {Object} elements The elements of the array.
+ * @param       {Object} type     The type of the array.
+ * @constructor
+ */
+export function ArrayType(address, elements, type) {
+  this.address = address;
+  this.elements = {};
+  this.count = type.count.number;
+  this.type = getType(type);
+
+  for (let index in elements) {
+    const element = elements[index];
+    const address = this.address + (index * element.type.size);
+    const value = constructDataTypeFromValue(address, element);
+
+    this.elements[address] = value;
+  }
 }
 /**
  * Represents a string literal.

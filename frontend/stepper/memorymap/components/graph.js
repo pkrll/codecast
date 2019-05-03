@@ -102,11 +102,11 @@ function drawLines(heap, refs, scale) {
   let n = 0;
 
   const lines = Object.keys(heap.values).map((key, index) => {
-    const value = heap.values[key];
-    if (value.constructor.name == PointerType.name && heap.cellMapping[value.target] && heap.cellMapping[value.source]) {
+    const cell = heap.values[key];
+    if (cell.constructor.name == PointerType.name && heap.cellMapping[cell.value] && heap.cellMapping[cell.address]) {
         n += 1;
 
-        return (<Line refs={refs} key={key} index={n} fromAddress={value.source} toAddress={value.target} scale={scale}/>)
+        return (<Line refs={refs} key={key} index={n} fromAddress={cell.address} toAddress={cell.value} scale={scale}/>)
       }
     });
 
