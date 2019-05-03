@@ -707,7 +707,8 @@ function postLink (scope, actionTypes) {
         frames: [],
         variables: {},
         functions: {},
-        values: {}
+        values: {},
+        height: 0
       },
       heap: {
         allocatedBlocks: {},

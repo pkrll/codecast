@@ -880,4 +880,38 @@ button.btn-cc {
     fill: none;
     stroke: black;
     stroke-width: 2px;
+    pointer-events: visiblePoint;
+    marker-end: url(#arrow);
+}
+
+.blockTypeLabel {
+  font-size: 12px;
+  font-weight: bold;
+  fill: grey;
+}
+
+.blockField {
+  stroke: blue;
+}
+
+.blockFieldName {
+  font-size: 12px;
+  font-weight: bold;
+  fill: crimson;
+}
+
+.blockFieldValue {
+  font-size: 15px;
+  dominant-baseline: middle;
+  fill: black;
+}
+
+.frameName {
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.stackVariable {
+  stroke: blue;
+  fill: none;
 }

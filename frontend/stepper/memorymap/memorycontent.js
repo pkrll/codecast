@@ -117,14 +117,16 @@ export function StackVariable(name, ref, type) {
  */
 export function StackFrame(frame, stack) {
   const func       = frame.get('func');
+  const args       = frame.get('args');
   const localMap   = frame.get('localMap');
   const localNames = frame.get('localNames');
 
   this.name = func.name;
   this.type = getType(func.type.pointee.result);
+  this.arguments = {};
   this.variables = {};
-  this.uninitialized = stack.functions[this.name].uninitialized;
-  this.numberOfVariables = stack.functions[this.name].numberOfVariables;
+  this.uninitialized = Object.assign({}, stack.functions[this.name].uninitialized);
+  this.numberOfVariables = stack.functions[this.name].numberOfVariables + args.length;
   // Adds all initialized stack variables to the
   // function's lists of variables.
   localNames.forEach(name => {
@@ -136,6 +138,8 @@ export function StackFrame(frame, stack) {
     // This is so that we can access variables faster?
     stack.variables[variable.address] = variable;
   });
+  // TODO: Add arguments?
+  // args.forEach(arg => this.arguments[arg.address] = this.variables[arg.address]);
 }
 /**
  * Represents a data type allocated on the heap.

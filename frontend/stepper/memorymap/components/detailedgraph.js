@@ -1,25 +1,23 @@
 import React from 'react';
-import Slider from 'rc-slider';
 import {Button, ButtonGroup} from '@blueprintjs/core';
-import classnames from 'classnames';
-import Immutable from 'immutable';
 import * as C from 'persistent-c';
-import { Dimensions, mapMemory, getType, getValueOf } from '../helpers';
-import { PointerType, ValueType } from '../memorycontent';
-import Line from './line';
-import Field from './block';
-import StackFrame from './stackframe';
+import { Properties } from '../helpers.js';
 import Graph from './graph';
+
 import './../../../style.scss';
 
 class DetailedGraph extends React.PureComponent {
 
   render() {
     const { context, scale, onZoom } = this.props;
-    const { heap, stack } = context.memoryGraph;
+    const { heap, stack, data } = context.memoryGraph;
     console.log(context.memoryGraph);
-    const height = heap.bytesAllocated * Dimensions.HEIGHT * scale + 100;
 
+    const stackHeight = stack.height * Properties.FRAMES.HEIGHT
+                      + stack.frames.length * Properties.FRAMES.OFFSETY + 100;
+    const heapHeight  = heap.bytesAllocated * Properties.BLOCKS.HEIGHT * scale + 100;
+    const height = Math.max(stackHeight, heapHeight);
+    // Should check against stack and data also, get the maximum height
 
     return (
       <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: height}}>
@@ -30,7 +28,7 @@ class DetailedGraph extends React.PureComponent {
               <Button small icon='zoom-to-fit' onClick={() => this.props.onZoom(1)}/>
             </ButtonGroup>
         </div>
-        <Graph heap={heap} stack={stack} scale={scale} height={height} heapStart={context.core.heapStart} />
+        <Graph context={context} scale={scale} height={height} />
       </div>
     )
   }

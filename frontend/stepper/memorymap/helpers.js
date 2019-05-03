@@ -2,11 +2,31 @@ import { StringLiteral, StackVariable, StackFrame, MemoryContent, ValueType, Poi
 import { enumerateHeapBlocks } from '../heap';
 import * as C from 'persistent-c';
 
+export const Properties = {
+  BLOCKS: {
+    HEIGHT: 30,
+    WIDTH: 60,
+    OFFSETX: 350,
+    OFFSETY: 40
+  },
+  FRAMES: {
+    HEIGHT: 30,
+    WIDTH: 175,
+    OFFSETX: 5,
+    OFFSETY: 40
+  }
+}
+
 export const Dimensions = {
   HEIGHT: 30,
   WIDTH: 60,
   X: 350
 };
+
+export function buildPosition(y, x, width, height) {
+  return {y, x, width, height};
+}
+
 /**
  * Retrieves the type of a variable from a node in the AST.
  *
@@ -137,15 +157,18 @@ export function mapMemory(context, startAddress, maxAddress) {
   let stack = memoryGraph.stack;
 
   let stackFrames = [];
+  let stackHeight = 0;
   // Build the stack frames
   analysis.frames.forEach(function(frame, depth) {
     if (frame.get('func').body[1].range) {
       const stackFrame = new StackFrame(frame, stack);
+      stackHeight += stackFrame.numberOfVariables;
       stackFrames.push(stackFrame);
     }
   });
 
   stack.frames = stackFrames;
+  stack.height = stackHeight;
 
   let allocatedBlocks = {};
   let endAddress = 0;
@@ -156,13 +179,19 @@ export function mapMemory(context, startAddress, maxAddress) {
 
     if (block.free) {
       // Makes sure a free'd block is marked as free
+      if (heap.allocatedBlocks.hasOwnProperty(block.start)) {
+        heap.allocatedBlocks[block.start].free = block.free;
+      }
       if (block.start > endAddress) {
         endAddress = block.start;
       }
     }
   }
 
-  heap.bytesAllocated = endAddress - context.core.heapStart;
+  const bytesAllocated = endAddress - context.core.heapStart;
+  if (bytesAllocated > heap.bytesAllocated) {
+    heap.bytesAllocated = bytesAllocated;
+  }
   // Every memory event is recorded in the memory log. By mapping every
   // "store" operation to an allocated block, we can find information
   // on every allocation made.
