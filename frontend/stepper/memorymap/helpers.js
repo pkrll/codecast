@@ -1,4 +1,4 @@
-import { StringLiteral, StackVariable, StackFrame, MemoryContent, ValueType, PointerType, Types, constructDataTypeFromValue } from './memorycontent';
+import { StringLiteral, StackVariable, StackFrame, MemoryContent, ValueType, PointerType, ArrayType, Types, constructDataTypeFromValue } from './memorycontent';
 import { enumerateHeapBlocks } from '../heap';
 import * as C from 'persistent-c';
 
@@ -113,14 +113,54 @@ export function getValueOf(data) {
   if (data !== undefined) {
     const type = data.constructor.name;
     if (type == ValueType.name)   return data.value;
-    if (type == PointerType.name) return data.value;
+    if (type == PointerType.name) return "0x"+data.value.toString(16);
+    if (type == ArrayType.name) {
+      let values = "";
+      for (let key in data.elements) {
+        if (values) values += ", ";
+
+        values += getValueOf(data.elements[key]);
+      }
+
+      return "{ " + values + " }"
+    }
 
     console.error("Data type not defined");
+    console.error(data);
 
     return undefined;
   }
 
   return randomString(7);
+}
+
+export function getTypeOf(variable) {
+	const type = variable.type;
+	let prefix = "";
+	let suffix = "";
+
+	switch (type.kind) {
+		case Types.POINTER:
+			const pointerSubType = getTypeOf(type);
+			prefix = pointerSubType.prefix + "*";
+			suffix = pointerSubType.suffix;
+			break;
+		case Types.RECORD:
+			prefix = "struct " + type.name + " ";
+			break;
+		case Types.SCALAR:
+			prefix = type.name + " ";
+			break;
+		case Types.ARRAY:
+			const arraySubType = getTypeOf(type);
+			prefix = arraySubType.prefix;
+			suffix = "["+type.count+"]"+arraySubType.suffix;
+			break;
+		default:
+			prefix = "unknown";
+	}
+
+	return {prefix, suffix};
 }
 /**
  * Generates a random string of specified length.

@@ -65,7 +65,7 @@ export function ArrayType(address, elements, type) {
   this.address = address;
   this.elements = {};
   this.count = type.count.number;
-  this.type = getType(type);
+  this.type = buildType(type);
 
   for (let index in elements) {
     const element = elements[index];
@@ -84,7 +84,7 @@ export function ArrayType(address, elements, type) {
  */
 export function StringLiteral(elements, ref) {
   this.size = ref.type.count.number;
-  this.type = getType(ref.type);
+  this.type = buildType(ref.type);
   this.address = ref.address;
   this.elements = [];
   this.value = "";
@@ -105,7 +105,7 @@ export function StringLiteral(elements, ref) {
  */
 export function StackVariable(name, ref, type) {
   this.name = name;
-  this.type = type || getType(ref.type.pointee);
+  this.type = type || buildType(ref.type.pointee);
   this.address = ref.address;
 }
 /**
@@ -122,7 +122,7 @@ export function StackFrame(frame, stack) {
   const localNames = frame.get('localNames');
 
   this.name = func.name;
-  this.type = getType(func.type.pointee.result);
+  this.type = buildType(func.type.pointee.result);
   this.arguments = {};
   this.variables = {};
   this.uninitialized = Object.assign({}, stack.functions[this.name].uninitialized);
@@ -174,7 +174,7 @@ export function MemoryContent(context, ref, {start, end, free}) {
   // The type of the allocated block consist of kind and name
   // where kind is pointer|scalar|record and name is either the
   // name of a record/structure or the name of the built-in type.
-  this.type = getType(pointer);
+  this.type = buildType(pointer);
   this.size = pointer.size || (end - start + 1); // void types have size 0
   this.address = ref.address;
   this.fields  = [];
@@ -201,7 +201,7 @@ export function MemoryContent(context, ref, {start, end, free}) {
       const field = value.fields[index];
       const name  = field.name;
       const size  = field.content.current.type.size;
-      const type  = getType(field.content.current.type);
+      const type  = buildType(field.content.current.type);
 
       this.fields.push(buildField(name, size, type, field.address));
       this.fieldAddresses[field.address] = this.address;
@@ -213,10 +213,10 @@ function buildField(name, size, type, address) {
   return {name, size, type, address};
 }
 
-function getType(type) {
+function buildType(type) {
   switch (type.kind) {
     case Types.POINTER:
-      return {kind: type.kind, type: getType(type.pointee)};
+      return {kind: type.kind, type: buildType(type.pointee)};
       break;
     case Types.BUILTIN:
       return {kind: Types.SCALAR, size: type.size, name: type.repr};
@@ -228,7 +228,7 @@ function getType(type) {
       return {kind: type.current.type.kind, name: type.current.type.repr};
       break;
     case Types.ARRAY:
-      return {kind: type.kind, count: type.count.number, size: type.size, type: getType(type.elem)};
+      return {kind: type.kind, count: type.count.number, size: type.size, type: buildType(type.elem)};
       break;
     default:
       return {kind: "unknown", name: "unknown"};

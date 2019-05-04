@@ -1,10 +1,11 @@
 import React from 'react';
-import { buildPosition, Properties } from '../helpers';
+import { Properties, getTypeOf, getValueOf, buildPosition } from '../helpers';
 import { Types } from '../memorycontent';
 
 class Frames extends React.PureComponent {
 	render() {
 		const { stack, positions } = this.props;
+		const values = stack.values;
 
 		let previousBottom = Properties.FRAMES.OFFSETY;
 
@@ -12,7 +13,7 @@ class Frames extends React.PureComponent {
 			const offsetTop = previousBottom;
 			previousBottom += frame.numberOfVariables * Properties.FRAMES.HEIGHT + Properties.FRAMES.OFFSETY;
 
-			const props = { frame, offsetTop, positions };
+			const props = { frame, values, offsetTop, positions };
 
 			return (<StackFrame key={frame.name} {...props} />)
 		});
@@ -85,45 +86,17 @@ class StackVariables extends React.PureComponent {
 class StackVariable extends React.PureComponent {
 	render() {
 		const { variable, values, offsetTop } = this.props;
-		const type = getTypeOf(variable);
-		const name = type.prefix + variable.name + type.suffix;
+		const value = getValueOf(values[variable.address]);
+		const type  = getTypeOf(variable);
+		const name  = type.prefix + variable.name + type.suffix;
 
 		return (
 			<g>
 				<rect y={offsetTop} width={Properties.FRAMES.WIDTH} height={Properties.FRAMES.HEIGHT} className="stackVariable" />
-				<text y={offsetTop + 20} x={Properties.FRAMES.OFFSETX}>{name}</text>
+				<text y={offsetTop + 20} x={Properties.FRAMES.OFFSETX}>{name} = {value}</text>
 			</g>
 		);
 	}
-}
-
-function getTypeOf(variable) {
-	const type = variable.type;
-	let prefix = "";
-	let suffix = "";
-
-	switch (type.kind) {
-		case Types.POINTER:
-			const pointerSubType = getTypeOf(type);
-			prefix = pointerSubType.prefix + "*";
-			suffix = pointerSubType.suffix;
-			break;
-		case Types.RECORD:
-			prefix = "struct " + type.name + " ";
-			break;
-		case Types.SCALAR:
-			prefix = type.name + " ";
-			break;
-		case Types.ARRAY:
-			const arraySubType = getTypeOf(type);
-			prefix = arraySubType.prefix;
-			suffix = "["+type.count+"]"+arraySubType.suffix;
-			break;
-		default:
-			prefix = "unknown";
-	}
-
-	return {prefix, suffix};
 }
 
 export default Frames;

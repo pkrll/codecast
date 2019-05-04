@@ -1,4 +1,5 @@
 import React from 'react';
+import { Properties } from '../helpers';
 import { PointerType } from '../memorycontent';
 
 class Lines extends React.PureComponent {
@@ -6,16 +7,21 @@ class Lines extends React.PureComponent {
 		const { heap, stack, positions } = this.props;
 		let values = [];
 
-	  Object.keys(heap.values).forEach((key, index) => values.push(heap.values[key]));
-	  Object.keys(stack.values).forEach((key, index) => values.push(stack.values[key]));
+	  Object.keys(heap.values).forEach((key, index) => values.push({
+			cell: heap.values[key], dimensions: Properties.BLOCKS
+		}));
+	  Object.keys(stack.values).forEach((key, index) => values.push({
+			cell: stack.values[key], dimensions: Properties.FRAMES
+		}));
 
-		const elements = values.map((cell, index) => {
-			if (cell.constructor.name !== PointerType.name) return;
-			const sourceAddress = cell.address;
-			const targetAddress = cell.value;
+		const elements = values.map((value, index) => {
+			if (value.cell.constructor.name !== PointerType.name) return;
+			const sourceAddress = value.cell.address;
+			const targetAddress = value.cell.value;
 
 			if (positions[sourceAddress] && positions[targetAddress]) {
-				const props = {sourceAddress, targetAddress, positions};
+				const dimensions = value.dimensions;
+				const props = {sourceAddress, targetAddress, positions, dimensions};
 				return (<Line key={index} {...props}/>);
 			}
 		});
@@ -26,17 +32,31 @@ class Lines extends React.PureComponent {
 
 class Line extends React.PureComponent {
 	render() {
-		const { sourceAddress, targetAddress, positions } = this.props;
+		const { sourceAddress, targetAddress, positions, dimensions } = this.props;
 
 		const source = positions[sourceAddress];
     const target = positions[targetAddress];
-    const startY = source.y;
-    const finalY = target.y;
-    const startX = source.x;
-    const finalX = target.x;
 
-		const d = " M " + startX + "," + startY
-						+ " L " + finalX + "," + finalY;
+		let d = "";
+
+		if (source.x == target.x || source.y == target.y) {
+			const startX = dimensions.OFFSETX + dimensions.WIDTH;
+			const startY = source.y;
+			const finalX = dimensions.OFFSETX + dimensions.WIDTH
+			             + 100 - Math.abs(sourceAddress - targetAddress);
+			const finalY = target.y;
+			d = " M " + startX + "," + startY
+			  + " C " + finalX + "," + startY
+			  + "   " + finalX + "," + finalY
+				+ "   " + startX + "," + finalY;
+		} else {
+			const startX = source.x;
+			const startY = source.y;
+			const finalY = target.y;
+	    const finalX = target.x;
+			d = " M " + startX + "," + startY
+			  + " L " + finalX + "," + finalY;
+		}
 
 		return (<path className="pointerArrow" d={d} />);
 	}
