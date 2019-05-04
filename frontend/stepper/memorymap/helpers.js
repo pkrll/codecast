@@ -14,6 +14,12 @@ export const Properties = {
     WIDTH: 175,
     OFFSETX: 5,
     OFFSETY: 40
+  },
+  DATA: {
+    HEIGHT: 25,
+    WIDTH: 175,
+    OFFSETX: 650,
+    OFFSETY: 40
   }
 }
 

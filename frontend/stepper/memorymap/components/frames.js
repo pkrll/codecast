@@ -30,7 +30,7 @@ class StackFrame extends React.PureComponent {
 		return (
 			<svg y={offsetTop}>
 				<g>
-					<text y={10} x={Properties.FRAMES.OFFSETX} className="frameName">
+					<text y={15} x={Properties.FRAMES.OFFSETX} className="frameName">
 						{frame.name}
 					</text>
 					<StackVariables {...props} />
@@ -48,7 +48,7 @@ class StackVariables extends React.PureComponent {
 
 		const uninitialized = Object.keys(frame.uninitialized).map((key, _) => {
 			const variable  = frame.uninitialized[key];
-			const offsetTop = index * Properties.FRAMES.HEIGHT + 15;
+			const offsetTop = index * Properties.FRAMES.HEIGHT + 20;
 			const props = { variable, values, offsetTop }
 			index += 1;
 
@@ -59,7 +59,7 @@ class StackVariables extends React.PureComponent {
 
 		const initialized = Object.keys(frame.variables).map((key, _) => {
 			const variable  = frame.variables[key];
-			const offsetTop = index * Properties.FRAMES.HEIGHT + 15;
+			const offsetTop = index * Properties.FRAMES.HEIGHT + 20;
 			const props = { variable, values, offsetTop }
 			index += 1;
 

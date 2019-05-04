@@ -3,6 +3,7 @@ import * as C from 'persistent-c';
 import Blocks from './blocks';
 import Frames from './frames';
 import Lines from './lines';
+import Data from './data';
 
 import './../../../style.scss';
 
@@ -21,13 +22,16 @@ class Graph extends React.PureComponent {
         </defs>
         <svg y={10}>
           <g>
-            <text y={10 * scale + 5} x="10" style={{fontSize: 15 * scale + `px`}} fontWeight='bold' fill='grey'>stack</text>
+            <text y={10 * scale + 5} x="10" height="10" style={{fontSize: 15 * scale + `px`}} fontWeight='bold' fill='grey'>stack</text>
             <text y={10 * scale + 5} x="200" style={{fontSize: 15 * scale + `px`}} fontWeight='bold' fill='grey'>heap</text>
             <line x1="175" x2="175" y1="0" y2="100%" stroke="grey" strokeWidth="1" style={{opacity: 0.5}}/>
+            <text y={10 * scale + 5} x="655" style={{fontSize: 15 * scale + `px`}} fontWeight='bold' fill='grey'>data</text>
+            <line x1="645" x2="645" y1="0" y2="100%" stroke="grey" strokeWidth="1" style={{opacity: 0.5}}/>
           </g>
         </svg>
         <Frames stack={stack} positions={positions} />
         <Blocks heap={heap} heapStart={heapStart} positions={positions} />
+        <Data data={data} positions={positions} />
         <Lines heap={heap} stack={stack} positions={positions} />
       </svg>
     )

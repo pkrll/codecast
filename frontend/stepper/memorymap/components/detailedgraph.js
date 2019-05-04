@@ -16,8 +16,9 @@ class DetailedGraph extends React.PureComponent {
     const stackHeight = stack.height * Properties.FRAMES.HEIGHT
                       + stack.frames.length * Properties.FRAMES.OFFSETY + 100;
     const heapHeight  = heap.bytesAllocated * Properties.BLOCKS.HEIGHT * scale + 100;
-    const height = Math.max(stackHeight, heapHeight);
-    // Should check against stack and data also, get the maximum height
+    const dataHeight  = Object.keys(data.literals).length * Properties.DATA.HEIGHT
+                      + Properties.DATA.OFFSETY;
+    const height = Math.max(stackHeight, heapHeight, dataHeight);
 
     return (
       <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: height}}>
