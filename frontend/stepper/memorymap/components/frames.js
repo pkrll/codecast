@@ -1,5 +1,6 @@
 import React from 'react';
 import { buildPosition, Properties } from '../helpers';
+import { Types } from '../memorycontent';
 
 class Frames extends React.PureComponent {
 	render() {
@@ -62,7 +63,8 @@ class StackVariables extends React.PureComponent {
 			index += 1;
 
 			positions[variable.address] = buildPosition(
-				offsetTop + frameOffsetTop, Properties.FRAMES.OFFSETX,
+				Properties.FRAMES.OFFSETX + Properties.FRAMES.WIDTH,
+				offsetTop + frameOffsetTop + (Properties.FRAMES.HEIGHT / 2),
 				Properties.FRAMES.WIDTH, Properties.FRAMES.HEIGHT
 			);
 
@@ -83,14 +85,45 @@ class StackVariables extends React.PureComponent {
 class StackVariable extends React.PureComponent {
 	render() {
 		const { variable, values, offsetTop } = this.props;
+		const type = getTypeOf(variable);
+		const name = type.prefix + variable.name + type.suffix;
 
 		return (
 			<g>
 				<rect y={offsetTop} width={Properties.FRAMES.WIDTH} height={Properties.FRAMES.HEIGHT} className="stackVariable" />
-				<text y={offsetTop + 20} x={Properties.FRAMES.OFFSETX}>{variable.name}</text>
+				<text y={offsetTop + 20} x={Properties.FRAMES.OFFSETX}>{name}</text>
 			</g>
 		);
 	}
+}
+
+function getTypeOf(variable) {
+	const type = variable.type;
+	let prefix = "";
+	let suffix = "";
+
+	switch (type.kind) {
+		case Types.POINTER:
+			const pointerSubType = getTypeOf(type);
+			prefix = pointerSubType.prefix + "*";
+			suffix = pointerSubType.suffix;
+			break;
+		case Types.RECORD:
+			prefix = "struct " + type.name + " ";
+			break;
+		case Types.SCALAR:
+			prefix = type.name + " ";
+			break;
+		case Types.ARRAY:
+			const arraySubType = getTypeOf(type);
+			prefix = arraySubType.prefix;
+			suffix = "["+type.count+"]"+arraySubType.suffix;
+			break;
+		default:
+			prefix = "unknown";
+	}
+
+	return {prefix, suffix};
 }
 
 export default Frames;

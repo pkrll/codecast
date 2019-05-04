@@ -175,7 +175,7 @@ export function MemoryContent(context, ref, {start, end, free}) {
   // where kind is pointer|scalar|record and name is either the
   // name of a record/structure or the name of the built-in type.
   this.type = getType(pointer);
-  this.size = pointer.size || (end - start + 1); // void types have size 0, for some reason
+  this.size = pointer.size || (end - start + 1); // void types have size 0
   this.address = ref.address;
   this.fields  = [];
   this.free = free;
@@ -219,16 +219,16 @@ function getType(type) {
       return {kind: type.kind, type: getType(type.pointee)};
       break;
     case Types.BUILTIN:
-      return {kind: Types.SCALAR, name: type.repr};
+      return {kind: Types.SCALAR, size: type.size, name: type.repr};
       break;
     case Types.RECORD:
-      return {kind: type.kind, name: type.name};
+      return {kind: type.kind, size: type.size, name: type.name};
       break;
     case Types.SCALAR:
       return {kind: type.current.type.kind, name: type.current.type.repr};
       break;
     case Types.ARRAY:
-      return {kind: type.kind, elem: getType(type.elem)};
+      return {kind: type.kind, count: type.count.number, size: type.size, type: getType(type.elem)};
       break;
     default:
       return {kind: "unknown", name: "unknown"};

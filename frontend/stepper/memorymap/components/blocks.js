@@ -61,7 +61,7 @@ class Field extends React.PureComponent {
 		const value = getValueOf(values[field.address]);
 
 		positions[field.address] = buildPosition(
-			fieldOffsetTop + blockOffsetTop, Properties.BLOCKS.OFFSETX, width, height
+			Properties.BLOCKS.OFFSETX, fieldOffsetTop + blockOffsetTop, width, height
 		);
 
 		return (

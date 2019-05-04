@@ -1,4 +1,4 @@
-import { StringLiteral, StackVariable, StackFrame, MemoryContent, ValueType, PointerType, constructDataTypeFromValue } from './memorycontent';
+import { StringLiteral, StackVariable, StackFrame, MemoryContent, ValueType, PointerType, Types, constructDataTypeFromValue } from './memorycontent';
 import { enumerateHeapBlocks } from '../heap';
 import * as C from 'persistent-c';
 
@@ -23,8 +23,8 @@ export const Dimensions = {
   X: 350
 };
 
-export function buildPosition(y, x, width, height) {
-  return {y, x, width, height};
+export function buildPosition(x, y, width, height) {
+  return {x, y, width, height};
 }
 
 /**
@@ -38,10 +38,13 @@ function getTypeFromNode(node) {
 
   switch (type) {
     case "PointerType":
-      return {kind: type, type: getTypeFromNode(node[0][2])};
+      return {kind: Types.POINTER, type: getTypeFromNode(node[0][2])};
     case "BuiltinType":
+      return {kind: Types.SCALAR, name: node[0][1].name};
     case "RecordType":
-      return {kind: type, name: node[0][1].name};
+      return {kind: Types.RECORD, name: node[0][1].name};
+    case "ConstantArrayType":
+      return {kind: Types.ARRAY, count: node[0][1].size, type: getTypeFromNode(node[0][2])};
     case "ElaboratedType":
       return getTypeFromNode(node[0][2]);
     default:
