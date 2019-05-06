@@ -170,7 +170,6 @@ export function MemoryContent(context, ref, {start, end, free}) {
   const value = (pointer.repr == "void")
               ? {fields: []}
               : readValue(context, ref.type, ref.address);
-
   // The type of the allocated block consist of kind and name
   // where kind is pointer|scalar|record and name is either the
   // name of a record/structure or the name of the built-in type.
@@ -181,9 +180,9 @@ export function MemoryContent(context, ref, {start, end, free}) {
   this.free = free;
   this.end = end;
   this.fieldAddresses = {};
-
-  if (this.type.kind == Types.SCALAR) {
-    // Scalar types does not have fields built in
+  // Only record types have fields, but we use the same terminology for memory
+  // cells in general, meaning even scalar and pointer types have fields as well.
+  if (this.type.kind == Types.SCALAR || this.type.kind == Types.POINTER) {
     const numberOfFields = (end - start + 1) / this.size;
     for (let i = 0; i < numberOfFields; i++) {
       const name    = i.toString();
@@ -217,19 +216,14 @@ function buildType(type) {
   switch (type.kind) {
     case Types.POINTER:
       return {kind: type.kind, type: buildType(type.pointee)};
-      break;
     case Types.BUILTIN:
       return {kind: Types.SCALAR, size: type.size, name: type.repr};
-      break;
     case Types.RECORD:
       return {kind: type.kind, size: type.size, name: type.name};
-      break;
     case Types.SCALAR:
       return {kind: type.current.type.kind, name: type.current.type.repr};
-      break;
     case Types.ARRAY:
       return {kind: type.kind, count: type.count.number, size: type.size, type: buildType(type.elem)};
-      break;
     default:
       return {kind: "unknown", name: "unknown"};
   }

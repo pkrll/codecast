@@ -34,9 +34,9 @@ class Line extends React.PureComponent {
 	render() {
 		const { sourceAddress, targetAddress, positions, dimensions } = this.props;
 
-		const source = positions[sourceAddress];
-    const target = positions[targetAddress];
-
+		const source = positions[sourceAddress].out;
+    const target = positions[targetAddress].in;
+		console.log(positions);
 		let d = "";
 
 		if (source.x == target.x || source.y == target.y) {
@@ -50,7 +50,7 @@ class Line extends React.PureComponent {
 			  + "   " + finalX + "," + finalY
 				+ "   " + startX + "," + finalY;
 		} else {
-			const startX = source.x;
+			const startX = (source.x > target.x) ? source.x : source.x + source.width;
 			const startY = source.y;
 			const finalY = target.y;
 	    const finalX = target.x;

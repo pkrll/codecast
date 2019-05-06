@@ -22,10 +22,16 @@ class StringLiterals extends React.PureComponent {
 			const offsetTop = previousBottom;
 			previousBottom += Properties.DATA.HEIGHT;
 
-			positions[key] = buildPosition(
-				Properties.DATA.OFFSETX - 10, offsetTop + 10,
-				Properties.DATA.WIDTH, Properties.DATA.HEIGHT
-			);
+			positions[key] = {
+				out: buildPosition(
+					Properties.DATA.OFFSETX - 10, offsetTop + 10,
+					Properties.DATA.WIDTH, Properties.DATA.HEIGHT
+				),
+				in: buildPosition(
+					Properties.DATA.OFFSETX - 10, offsetTop + 10,
+					Properties.DATA.WIDTH, Properties.DATA.HEIGHT
+				)
+			};
 
 			const props = { literal, offsetTop };
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { getValueOf, buildPosition, Properties } from '../helpers';
+import { Types } from '../memorycontent';
 
 class Blocks extends React.PureComponent {
 	render() {
@@ -25,9 +26,10 @@ class Block extends React.PureComponent {
 	render() {
 		const { values, block, positions, heapStart } = this.props;
 		const blockOffsetTop = this.props.previousBottom;
-		// Used for the relative positions of the fields
+		// Used for the relative positions of the cells
 		let previousBottom = 0;
-
+		const typeName = getTypeName(block.type);
+		// Retrieve all memory cells
 		const fields = block.fields.map((field, index) => {
 			const fieldOffsetTop = previousBottom;
 			const props = { values, field, fieldOffsetTop, blockOffsetTop, positions };
@@ -42,7 +44,7 @@ class Block extends React.PureComponent {
 			<svg y={blockOffsetTop} x={Properties.BLOCKS.OFFSETX}>
 				<g fill="white" style={{opacity}}>
 					<text y={blockTypeLabelOffset} className="blockTypeLabel">
-						{block.type.name}
+						{typeName}
 					</text>
 					{fields}
 				</g>
@@ -60,9 +62,14 @@ class Field extends React.PureComponent {
 		const valueOffset = fieldOffsetTop + 30;
 		const value = getValueOf(values[field.address]);
 
-		positions[field.address] = buildPosition(
-			Properties.BLOCKS.OFFSETX, fieldOffsetTop + blockOffsetTop, width, height
-		);
+		positions[field.address] = {
+			out: buildPosition(
+				Properties.BLOCKS.OFFSETX, fieldOffsetTop + blockOffsetTop + height, width, height
+			),
+			in: buildPosition(
+				Properties.BLOCKS.OFFSETX, fieldOffsetTop + blockOffsetTop, width, height
+			)
+		};
 
 		return (
 			<g>
@@ -72,6 +79,13 @@ class Field extends React.PureComponent {
 			</g>
 		);
 	}
+}
+
+function getTypeName(type) {
+	if (type.kind == Types.POINTER) return getTypeName(type.type) + "*";
+	if (type.kind == Types.RECORD)  return "struct " + type.name;
+
+	return type.name;
 }
 
 export default Blocks;

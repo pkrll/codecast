@@ -63,11 +63,18 @@ class StackVariables extends React.PureComponent {
 			const props = { variable, values, offsetTop }
 			index += 1;
 
-			positions[variable.address] = buildPosition(
-				Properties.FRAMES.OFFSETX + Properties.FRAMES.WIDTH,
-				offsetTop + frameOffsetTop + (Properties.FRAMES.HEIGHT / 2),
-				Properties.FRAMES.WIDTH, Properties.FRAMES.HEIGHT
-			);
+			positions[variable.address] = {
+				out: buildPosition(
+					Properties.FRAMES.OFFSETX,
+					offsetTop + frameOffsetTop + (Properties.FRAMES.HEIGHT / 2),
+					Properties.FRAMES.WIDTH, Properties.FRAMES.HEIGHT
+				),
+				in: buildPosition(
+					Properties.FRAMES.OFFSETX + Properties.FRAMES.WIDTH,
+					offsetTop + frameOffsetTop + (Properties.FRAMES.HEIGHT / 2),
+					Properties.FRAMES.WIDTH, Properties.FRAMES.HEIGHT
+				),
+			};
 
 			return (
 				<StackVariable key={index} {...props}/>
