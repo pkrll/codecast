@@ -34,26 +34,26 @@ class Line extends React.PureComponent {
 	render() {
 		const { sourceAddress, targetAddress, positions, dimensions } = this.props;
 
-		const source = positions[sourceAddress].out;
-    const target = positions[targetAddress].in;
-		console.log(positions);
+		const source = positions[sourceAddress];
+    const target = positions[targetAddress];
+
 		let d = "";
 
-		if (source.x == target.x || source.y == target.y) {
+		if (source.in.x == target.in.x || source.in.y == target.in.y) {
 			const startX = dimensions.OFFSETX + dimensions.WIDTH;
-			const startY = source.y;
+			const startY = source.out.y;
 			const finalX = dimensions.OFFSETX + dimensions.WIDTH
 			             + 100 - Math.abs(sourceAddress - targetAddress);
-			const finalY = target.y;
+			const finalY = target.in.y;
 			d = " M " + startX + "," + startY
 			  + " C " + finalX + "," + startY
 			  + "   " + finalX + "," + finalY
 				+ "   " + startX + "," + finalY;
 		} else {
-			const startX = (source.x > target.x) ? source.x : source.x + source.width;
-			const startY = source.y;
-			const finalY = target.y;
-	    const finalX = target.x;
+			const startX = (source.in.x > target.in.x) ? source.out.x : source.out.x + source.out.width;
+			const startY = source.out.y;
+			const finalY = target.in.y;
+	    const finalX = target.in.x;
 			d = " M " + startX + "," + startY
 			  + " L " + finalX + "," + finalY;
 		}
