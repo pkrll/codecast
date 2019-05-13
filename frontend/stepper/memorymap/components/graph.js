@@ -13,7 +13,7 @@ class Graph extends React.PureComponent {
     const heapStart = context.core.heapStart;
     let positions = {};
 
-    const height = "500px";
+    const height = "250px";
 
     return (
       <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: height}}>

@@ -52,9 +52,7 @@ export default function (bundle, deps) {
         const detailLevel = dirControls.get('detailLevel', 1);
 				const hide = dirControls.get('hide', false);
 
-        if (hide) return null;
-
-				if (kind == "showGraph") {
+				if (kind == "showGraph" && hide == false) {
           const props = { context, setDetail: this.setDetail };
 
 					if (detailLevel >= 1) {
@@ -64,6 +62,8 @@ export default function (bundle, deps) {
 					}
 				}
 			}
+
+      if (component == "") return null;
 
 			return (
         <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: `auto`}}>
