@@ -1,7 +1,9 @@
 import React from 'react';
 import classnames from 'classnames';
+import {Button, ButtonGroup} from '@blueprintjs/core';
 import Immutable from 'immutable';
 import DetailedGraph from './components/detailedgraph';
+import Graph from './components/graph';
 /**
  * The Memory Map component draws the contents of the memory.
  *
@@ -15,10 +17,6 @@ import DetailedGraph from './components/detailedgraph';
  */
 export default function (bundle, deps) {
 
-	bundle.defineAction('memoryChanged', 'memoryChanged');
-	bundle.defineAction('memoryMapZoom', 'memoryMapZoom');
-	bundle.addReducer('memoryChanged', memoryChanged);
-	bundle.addReducer('memoryMapZoom', memoryMapZoom);
 	bundle.use('stepperViewControlsChanged', 'getStepperDisplay');
 
 	function MemoryMapSelector (state, props) {
@@ -27,18 +25,9 @@ export default function (bundle, deps) {
 	}
 
 	bundle.defineView('MemoryMap', MemoryMapSelector, class MemoryMap extends React.Component {
-		/**
-		 * Updates the memoryContent structure in the store.
-		 *
-		 * @param  {Object} payload  The new memoryContent object.
-		 */
-		updateMemoryContent = (payload) => {
-			this.props.dispatch({type: "memoryChanged", payload});
-		};
 
-    zoom = zoom => {
-      if (zoom < 1) zoom = 1;
-      this.props.dispatch({type: deps.stepperViewControlsChanged, key: 'view1', update: {zoom}});
+    setDetail = detailLevel => {
+      this.props.dispatch({type: deps.stepperViewControlsChanged, key: 'view1', update: {detailLevel}});
     };
 
     shouldComponentUpdate(nextProps) {
@@ -55,55 +44,37 @@ export default function (bundle, deps) {
 			const startAddress = 0;
 			const context      = { core, oldCore, memoryGraph, analysis, maxAddress, startAddress };
 
-			let components = [];
+			let component = "";
 			// This component is displayed only when the directive showGraph is active.
 			for (let directive of ordered) {
 				const {key, kind} = directive;
 				const dirControls = controls.get(key, Immutable.Map());
-        const zoom = dirControls.get('zoom', 1);
+        const detailLevel = dirControls.get('detailLevel', 1);
 				const hide = dirControls.get('hide', false);
 
 				if (kind == "showGraph" && hide == false) {
-					const detailLevel = (directive.byName.detail)
-					                  ? directive.byName.detail[1]
-					                  : 1;
+          const props = { context, setDetail: this.setDetail };
 
 					if (detailLevel >= 1) {
-						components.push(<DetailedGraph key={key} context={context} scale={zoom} onZoom={this.zoom}/>);
+						component = (<DetailedGraph key={key} {...props}/>);
 					} else {
-						// TODO: Others??
+            component = (<Graph key={key} {...props}/>);
 					}
 				}
 			}
 
-			return (<div>{components}</div>);
+			return (
+        <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: `auto`}}>
+          <div>
+            <ButtonGroup>
+              <Button small icon='minimize' onClick={() => this.setDetail(0)} />
+              <Button small icon='maximize' onClick={() => this.setDetail(1)}/>
+            </ButtonGroup>
+          </div>
+          {component}
+        </div>
+      );
 		};
 
 	});
 };
-/**
- * Updates the state and sets the new memoryContents structure.
- *
- * @param  {Object} state  The current state
- * @param  {Object} action The action.
- * @return {Object}        The new state
- */
-function memoryChanged(state, action) {
-	const { payload } = action;
-	return state.updateIn(['stepper', 'current'], function(stepperState) {
-		stepperState.memoryGraph = payload;
-		return stepperState;
-	});
-}
-
-function memoryMapZoom(state, action) {
-  const { payload } = action;
-
-  return state.updateIn(['stepper', 'current'], function(stepperState) {
-
-
-    stepperState.memoryGraph.zoom = zoom;
-
-    return stepperState;
-  });
-}

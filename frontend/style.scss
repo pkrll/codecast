@@ -874,6 +874,7 @@ button.btn-cc {
 .pointerArrow:hover {
   stroke: red;
   cursor: pointer;
+  marker-end: url(#arrow-hover);
 }
 
 .pointerArrow {

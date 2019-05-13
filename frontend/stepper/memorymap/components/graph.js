@@ -1,41 +1,94 @@
 import React from 'react';
 import * as C from 'persistent-c';
-import Blocks from './blocks';
-import Frames from './frames';
-import Lines from './lines';
-import Data from './data';
+import Circles from './circles';
+import { PointerType } from '../memorycontent';
 
 import './../../../style.scss';
 
 class Graph extends React.PureComponent {
 
   render() {
-		const { context, scale, height } = this.props;
+		const { context } = this.props;
     const { heap, stack, data } = context.memoryGraph;
     const heapStart = context.core.heapStart;
     let positions = {};
 
+    const height = "500px";
+
     return (
-      <svg ref='svgRef' width="100%" height="100%" aria-labelledby="title desc">
-        <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" fill="black" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
-        </defs>
-        <svg y={10}>
-          <g>
-            <text y={10 * scale + 5} x="10" height="10" style={{fontSize: 15 * scale + `px`}} fontWeight='bold' fill='grey'>stack</text>
-            <text y={10 * scale + 5} x="200" style={{fontSize: 15 * scale + `px`}} fontWeight='bold' fill='grey'>heap</text>
-            <line x1="175" x2="175" y1="0" y2="100%" stroke="grey" strokeWidth="1" style={{opacity: 0.5}}/>
-            <text y={10 * scale + 5} x="655" style={{fontSize: 15 * scale + `px`}} fontWeight='bold' fill='grey'>data</text>
-            <line x1="645" x2="645" y1="0" y2="100%" stroke="grey" strokeWidth="1" style={{opacity: 0.5}}/>
-          </g>
+      <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: height}}>
+        <svg ref='svgRef' width="100%" height="100%" aria-labelledby="title desc">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" fill="black" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
+            <marker id="arrow-hover" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" fill="red" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
+          </defs>
+          <Circles heap={heap} positions={positions} />
+          <Lines heap={heap} stack={stack} positions={positions} />
         </svg>
-        <Frames stack={stack} positions={positions} />
-        <Blocks heap={heap} heapStart={heapStart} positions={positions} />
-        <Data data={data} positions={positions} />
-        <Lines heap={heap} stack={stack} positions={positions} />
-      </svg>
+      </div>
     )
 
+	}
+}
+
+class Lines extends React.PureComponent {
+  render() {
+    const { heap, stack, positions } = this.props;
+		let values = Object.keys(heap.values);
+
+		const elements = values.map((key, index) => {
+      const value = heap.values[key];
+			if (value.constructor.name !== PointerType.name) return;
+			const sourceAddress = value.address;
+			const targetAddress = value.value;
+
+			if (positions[sourceAddress] && positions[targetAddress]) {
+				const props = {sourceAddress, targetAddress, positions};
+				return (<Line key={index} {...props}/>);
+			}
+		});
+
+		return elements;
+	}
+}
+
+class Line extends React.PureComponent {
+	render() {
+		const { sourceAddress, targetAddress, positions } = this.props;
+
+		const source = positions[sourceAddress];
+    const target = positions[targetAddress];
+
+		let d = "";
+
+    if (source.in.x == target.in.x) {
+    } else if (source.in.x == (target.in.x - 150)) {
+      const startX = source.out.x + source.out.width;
+      const startY = source.out.y;
+      const finalY = target.in.y;
+      const finalX = target.in.x - target.in.width;
+      d = " M " + startX + "," + startY
+        + " L " + finalX + "," + finalY;
+    } else if (source.in.x == (target.in.x + 150)) {
+      const startX = source.in.x - source.in.width;
+      const startY = source.in.y;
+      const finalY = target.out.y;
+      const finalX = target.out.x + target.out.width;
+      d = " M " + startX + "," + startY
+        + " L " + finalX + "," + finalY;
+    } else {
+      const startX = source.out.x;
+      const startY = source.out.y + source.out.height;
+      const middleY = startY + (100 - Math.abs(sourceAddress - targetAddress));
+      const finalX = target.in.x;
+      const finalY = target.in.y + source.out.height;
+      d = " M " + startX + "," + startY
+        + " C " + startX + "," + middleY
+        + "   " + finalX + "," + middleY
+        + "   " + finalX + "," + finalY;
+    }
+
+		return (<path className="pointerArrow" d={d} />);
 	}
 }
 
