@@ -52,7 +52,9 @@ export default function (bundle, deps) {
         const detailLevel = dirControls.get('detailLevel', 1);
 				const hide = dirControls.get('hide', false);
 
-				if (kind == "showGraph" && hide == false) {
+        if (hide) return null;
+
+				if (kind == "showGraph") {
           const props = { context, setDetail: this.setDetail };
 
 					if (detailLevel >= 1) {
