@@ -43,7 +43,7 @@ class Line extends React.PureComponent {
 			const startX = dimensions.OFFSETX + dimensions.WIDTH;
 			const startY = source.out.y;
 			const finalX = dimensions.OFFSETX + dimensions.WIDTH
-			             + 100 - Math.abs(sourceAddress - targetAddress);
+			             + Math.abs(100 - Math.abs(sourceAddress - targetAddress));
 			const finalY = target.in.y;
 			d = " M " + startX + "," + startY
 			  + " C " + finalX + "," + startY

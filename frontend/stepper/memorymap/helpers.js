@@ -3,6 +3,11 @@ import { enumerateHeapBlocks } from '../heap';
 import * as C from 'persistent-c';
 
 export const Properties = {
+  CIRCLES: {
+    RADIUS: 50,
+    OFFSETY: 75,
+    OFFSETX: 75
+  },
   BLOCKS: {
     HEIGHT: 30,
     WIDTH: 60,
@@ -33,6 +38,12 @@ export function buildPosition(x, y, width, height) {
   return {x, y, width, height};
 }
 
+export function getTypeName(type) {
+	if (type.kind == Types.POINTER) return getTypeName(type.type) + "*";
+	if (type.kind == Types.RECORD)  return "struct " + type.name;
+
+	return type.name;
+}
 /**
  * Retrieves the type of a variable from a node in the AST.
  *

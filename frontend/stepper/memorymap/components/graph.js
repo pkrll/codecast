@@ -14,20 +14,18 @@ class Graph extends React.PureComponent {
     let positions = {};
 
     const height = "250px";
+    const width  = 75 + Object.keys(heap.allocatedBlocks).length * 150;
 
     return (
-      <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: height}}>
-        <svg ref='svgRef' width="100%" height="100%" aria-labelledby="title desc">
-          <defs>
-            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" fill="black" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
-            <marker id="arrow-hover" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" fill="red" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
-          </defs>
-          <Circles heap={heap} positions={positions} />
-          <Lines heap={heap} stack={stack} positions={positions} />
-        </svg>
-      </div>
+      <svg ref='svgRef' width={width} height={height} aria-labelledby="title desc">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" fill="black" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
+          <marker id="arrow-hover" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" fill="red" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
+        </defs>
+        <Circles heap={heap} positions={positions} />
+        <Lines heap={heap} stack={stack} positions={positions} />
+      </svg>
     )
-
 	}
 }
 
@@ -79,7 +77,7 @@ class Line extends React.PureComponent {
     } else {
       const startX = source.out.x;
       const startY = source.out.y + source.out.height;
-      const middleY = startY + (100 - Math.abs(sourceAddress - targetAddress));
+      const middleY = startY + Math.abs(100 - Math.abs(sourceAddress - targetAddress));
       const finalX = target.in.x;
       const finalY = target.in.y + source.out.height;
       d = " M " + startX + "," + startY

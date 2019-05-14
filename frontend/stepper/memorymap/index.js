@@ -66,7 +66,7 @@ export default function (bundle, deps) {
       if (component == "") return null;
 
 			return (
-        <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: `auto`}}>
+        <div style={{background: `rgb(240, 240, 240)`, width: `100%`, height: `auto`, overflowX: `auto`}}>
           <div>
             <ButtonGroup>
               <Button small icon='minimize' onClick={() => this.setDetail(0)} />

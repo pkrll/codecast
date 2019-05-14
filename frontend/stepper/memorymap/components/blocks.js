@@ -1,5 +1,5 @@
 import React from 'react';
-import { getValueOf, buildPosition, Properties } from '../helpers';
+import { getTypeName, getValueOf, buildPosition, Properties } from '../helpers';
 import { Types } from '../memorycontent';
 
 class Blocks extends React.PureComponent {
@@ -81,11 +81,6 @@ class Field extends React.PureComponent {
 	}
 }
 
-function getTypeName(type) {
-	if (type.kind == Types.POINTER) return getTypeName(type.type) + "*";
-	if (type.kind == Types.RECORD)  return "struct " + type.name;
 
-	return type.name;
-}
 
 export default Blocks;
