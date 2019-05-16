@@ -15,3 +15,7 @@ rebuild:
 
 bash:
 	sudo docker exec -i -t codecast_codecast_1 /bin/bash
+
+heroku:
+	heroku container:push web --app calm-coast-56907
+	heroku container:release web
