@@ -266,8 +266,7 @@ fs.readFile('config.json', 'utf8', function (err, data) {
       app = rootApp;
     }
     const server = http.createServer(app);
-    server.listen(config.port);
+    server.listen(process.env.PORT || config.port);
     workerStore.dispatch({type: 'START'});
   });
 });
-
