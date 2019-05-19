@@ -12,9 +12,8 @@ class DetailedGraph extends React.PureComponent {
 
   render() {
     const { context } = this.props;
-    const { heap, stack, data } = context.memoryGraph;
+    const { heap, stack, data } = context.memoryMap;
     const heapStart = context.core.heapStart;
-    console.log(context.memoryGraph);
 
     const stackHeight = stack.height * Properties.FRAMES.HEIGHT
                       + stack.frames.length * Properties.FRAMES.OFFSETY + 100;

@@ -38,11 +38,11 @@ export default function (bundle, deps) {
 			const { state } = this.props;
 			if (!state) return false;
 
-			const { core, oldCore, memoryGraph, directives, controls, analysis } = state;
+			const { core, oldCore, memoryMap, directives, controls, analysis } = state;
 			const { ordered }  = directives;
       const maxAddress   = core.memory.size - 1;
 			const startAddress = 0;
-			const context      = { core, oldCore, memoryGraph, analysis, maxAddress, startAddress };
+			const context      = { core, oldCore, memoryMap, analysis, maxAddress, startAddress };
 
 			let component = "";
 			// This component is displayed only when the directive showGraph is active.

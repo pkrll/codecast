@@ -9,7 +9,7 @@ class Graph extends React.PureComponent {
 
   render() {
 		const { context } = this.props;
-    const { heap, stack, data } = context.memoryGraph;
+    const { heap, stack, data } = context.memoryMap;
     const heapStart = context.core.heapStart;
     let positions = {};
 

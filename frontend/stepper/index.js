@@ -168,7 +168,7 @@ function enrichStepperState (stepperState) {
   // TODO? initialize controls for each directive added,
   //       clear controls for each directive removed (except 'stack').
   const maxAddress = core.memory.size - 1;
-  stepperState.memoryGraph = mapMemory(stepperState);
+  stepperState.memoryMap = mapMemory(stepperState);
   return stepperState;
 };
 
@@ -702,7 +702,7 @@ function postLink (scope, actionTypes) {
     };
     // The data structure for the memory representation
     // This should really be moved into the persistent-c library
-    let memoryGraph = {
+    let memoryMap = {
       stack: {
         frames: [],
         variables: {},
@@ -728,9 +728,9 @@ function postLink (scope, actionTypes) {
     const decls = syntaxTree[2];
     C.execDecls(core1, decls);
     // Create representation of stack and retrieve string literals
-    decls.forEach(node => mapStaticMemory(stepperState.core, memoryGraph, node));
+    decls.forEach(node => mapStaticMemory(stepperState.core, memoryMap, node));
 
-    stepperState.memoryGraph = memoryGraph;
+    stepperState.memoryMap = memoryMap;
     /* Set up the call to the main function. */
     C.setupCall(core1, 'main');
   });

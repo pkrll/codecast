@@ -62,6 +62,8 @@ function getTypeFromNode(node) {
       return {kind: Types.RECORD, name: node[0][1].name};
     case "ConstantArrayType":
       return {kind: Types.ARRAY, count: node[0][1].size, type: getTypeFromNode(node[0][2])};
+    case "IncompleteArrayType":
+      return {kind: Types.ARRAY, count: "", type: getTypeFromNode(node[0][2])};
     case "ElaboratedType":
       return getTypeFromNode(node[0][2]);
     default:
@@ -75,10 +77,10 @@ function getTypeFromNode(node) {
  * The function also retrieves all string literals.
  *
  * @param  {Object} core        The current context.
- * @param  {Object} memoryGraph Empty memory graph object.
+ * @param  {Object} memoryMap   The memory map object.
  * @param  {Object} node        An AST node.
  */
-export function mapStaticMemory(core, memoryGraph, node) {
+export function mapStaticMemory(core, memoryMap, node) {
   let heapStart = core.heapStart;
   let currentScope = undefined;
   C.forEachNode(node, function (node) {
@@ -89,13 +91,13 @@ export function mapStaticMemory(core, memoryGraph, node) {
       const ref = new C.PointerValue(value.type, heapStart);
       const ptr = core.literals.get(node, ref);
       const literal = new StringLiteral(value.elements, ptr);
-      memoryGraph.data.literals[literal.address] = literal;
+      memoryMap.data.literals[literal.address] = literal;
 
       heapStart += value.type.size;
     } else if (node[0] == 'VarDecl') {
       // Adds an unevaluated stack variable to the
       // the dictionary belonging to the current function.
-      const func = memoryGraph.stack.functions[currentScope]
+      const func = memoryMap.stack.functions[currentScope]
       if (func !== undefined) {
         const name = node[1].name;
         const type = getTypeFromNode(node[2]);
@@ -111,7 +113,7 @@ export function mapStaticMemory(core, memoryGraph, node) {
       // name of unevaluated variables (set above).
       // When the variable is evaluated, the values of the
       // entry will be a reference to that (StackVariable) object.
-      memoryGraph.stack.functions[currentScope] = {
+      memoryMap.stack.functions[currentScope] = {
         identifier: currentScope,
         variables: {},
         uninitialized: {},
@@ -192,12 +194,12 @@ export function randomString(length) {
  * This function maps the memory of the running program.
  *
  * @param  {Object} context      The current context.
- * @return {Object}              MemoryGraph updated.
+ * @return {Object}              memoryMap updated.
  */
 export function mapMemory(context) {
-  const { memoryGraph, analysis } = context;
-  let heap  = memoryGraph.heap;
-  let stack = memoryGraph.stack;
+  const { memoryMap, analysis } = context;
+  let heap  = memoryMap.heap;
+  let stack = memoryMap.stack;
 
   let stackFrames = [];
   let stackHeight = 0;
@@ -256,10 +258,10 @@ export function mapMemory(context) {
     }
   }
 
-  memoryGraph.heap  = heap;
-  memoryGraph.stack = stack;
+  memoryMap.heap  = heap;
+  memoryMap.stack = stack;
 
-  return memoryGraph;
+  return memoryMap;
 }
 
 function setValue(memory, source, value) {
