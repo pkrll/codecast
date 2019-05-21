@@ -45,6 +45,20 @@ export function getTypeName(type) {
 	return type.name;
 }
 /**
+ * Calculates the width of a string.
+ *
+ * Borrowed from https://stackoverflow.com/questions/118241/calculate-text-width-with-javascript
+ *
+ * @param  {String} text The string.
+ * @return {Number}      The width of text.
+ */
+export function getTextWidth(text) {
+    var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+    var context = canvas.getContext("2d");
+    var metrics = context.measureText(text);
+    return metrics.width;
+}
+/**
  * Retrieves the type of a variable from a node in the AST.
  *
  * @param  {Array}  node The AST node.
