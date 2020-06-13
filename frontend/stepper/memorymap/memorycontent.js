@@ -196,6 +196,13 @@ export function MemoryContent(context, ref, {start, end, free}) {
     // Update the size to reflect the actual size of the memory block
     this.size = numberOfFields * this.size;
   } else {
+    // Makes sure the size is the same as the allocated space. This happens
+    // for example with structs with sizes that are not a multiple of 4.
+    // The allocated space is not taken into consideration.
+    if (this.size % 4 != 0) this.size = (end - start + 1);
+    let tempSize = 0;
+    let lastAddress = 0;
+
     for (let index in value.fields) {
       const field = value.fields[index];
       const name  = field.name;
@@ -204,6 +211,17 @@ export function MemoryContent(context, ref, {start, end, free}) {
 
       this.fields.push(buildField(name, size, type, field.address));
       this.fieldAddresses[field.address] = this.address;
+
+      tempSize += size;
+      lastAddress = this.address + size;
+    }
+
+    if (tempSize < this.size) {
+      const name = "";
+      const size = this.size - tempSize;
+      const type = {kind: "void"};
+      this.fields.push(buildField(name, size, type, lastAddress));
+      this.fieldAddresses[lastAddress] = lastAddress;
     }
   }
 }
