@@ -70,7 +70,7 @@
     "packrattle": "^4.1.0",
     "persistent-c": "github:pkrll/persistent-c",
     "pretty-error": "^2.1.1",
-    "pug": "^2.0.0-beta5",
+    "pug": "^3.0.1",
     "query-string": "^4.3.2",
     "randomstring": "^1.1.5",
     "rc-slider": "^8.6.0",
